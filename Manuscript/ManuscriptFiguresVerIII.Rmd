@@ -1,0 +1,847 @@
+---
+title: "Manuscript Figures"
+author: "Denis Shah"
+date: "9/29/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r Libraries, eval=TRUE, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(tidymodels)
+
+library(patchwork)
+
+library(viridis)
+
+library(ggtext)
+library(glue)
+
+library(ggsci)
+
+tidymodels_prefer()
+```
+
+
+<!-- Each Figure chunk was set up to be independent, even though it meant repeating code.  -->
+
+
+```{r Figure-1}
+# OBJECTIVE:
+# Show the ROC-AUCs estimated on the outer assessment partitions for models stemming from running Boruta, varSelRF and VSURF.  This is before any parsing of the varSelRF and VSURF models to the smaller subsets that were later tuned and input into the meta-learners.
+
+# Load the Boruta results (assuming the RData file was saved upon running the script `BorutaVarSel1.R` in the Boruta folder):
+load("../Boruta/BorutaResSmall.RData")
+
+# The outer AUC estimates for the Boruta models:
+Boruta_auc <- 
+  Boruta_res %>%
+  dplyr::select(auc2) %>%
+  tidyr::unnest(cols = auc2) %>%
+  dplyr::rename(auc = .estimate) %>%
+  dplyr::mutate(method = "Boruta", .before = auc)
+
+
+# varSelRF (see the `varSelRF0.Rmd` script):
+load("../varSelRF/varSelRFResII.RData")
+rm(varSelRF_res_II)
+
+varSelRF_auc <-
+  m1 %>%
+  dplyr::select(auc.outer) %>%
+  tidyr::unnest(cols = auc.outer) %>%
+  dplyr::rename(auc = .estimate) %>%
+  dplyr::mutate(method = "varSelRF", .before = auc)
+
+
+# VSURF (see the script `VSURF0.Rmd`):
+load("../VSURF/VSURF0Res.RData")
+
+VSURF_auc <-
+  vsurf %>%
+  dplyr::select(auc) %>%
+  tidyr::unnest(cols = auc) %>%
+  dplyr::rename(auc = .estimate) %>%
+  dplyr::mutate(method = "VSURF", .before = auc)
+
+
+# Put them all into one data frame:
+auc_dat <-
+  dplyr::bind_rows(Boruta_auc, varSelRF_auc, VSURF_auc) %>%
+  dplyr::mutate(method = factor(method, levels = c("Boruta", "varSelRF", "VSURF")))
+
+
+# Box-and-whiskers plot with jitter of the individual points:
+auc_dat %>%
+  ggplot( aes(x = method, y = auc)) +
+  geom_boxplot() +
+  # scale_fill_viridis(discrete = TRUE, alpha = 0.6) +
+  # Use geom_point so that you can set a seed so the jitter positions don't change every time you run
+  geom_point(color = "black", shape = 19, size = 1, alpha = 0.9, position = position_jitter(seed = 1, width = 0.1)) +
+  # Add the mean:
+  stat_summary(fun = mean, geom = "point", shape = 8, size = 5) +
+  theme_light() +
+  labs(x = "", y = "ROC-AUC") +
+  theme(legend.position="none",
+        axis.text.y  = element_text(size = 10),
+        axis.text.x = element_text(size = 12, face = "bold"),
+        axis.title.y = element_text(size = 12, face = "bold"))
+```
+
+
+```{r Figure-2}
+## PART A
+# Load the object (m1) containing the information on the models (see the `varSelRF0.Rmd` script):
+load("../varSelRF/varSelRFResII.RData")
+
+# The data on the 20 models:
+m2 <- 
+   m1 %>%
+   dplyr::select(max.vars, max.no.vars, max.fmla, auc.outer) %>%
+   tidyr::unnest(cols = auc.outer) %>%
+   tibble::rownames_to_column() %>%
+   # 20 models:
+   dplyr::filter(.estimate >= 0.92, max.no.vars >= 9, max.no.vars <= 14) %>%
+   rename(vars = max.vars, no.vars = max.no.vars, fmla = max.fmla, auc = .estimate)
+
+# Get the variables (as used across the 20 models):
+vars <- 
+   m2 %>%  
+   dplyr::select(vars) %>%
+   tidyr::unnest(cols = vars)
+
+num_varSelRF_mods <- nrow(m2)
+
+# Prep the data:
+p1_dat <-
+  vars %>%
+  dplyr::group_by(var) %>%
+  dplyr::summarise(total_count = n(), relfreq = 100*(total_count/num_varSelRF_mods)) %>%
+  # This trick updates the factor levels:
+  dplyr::arrange(total_count) %>%
+  dplyr::mutate(var = factor(var, levels = var))
+
+# Plot the data (the goal is to extract the color vector):
+p1 <- 
+  p1_dat %>%   
+  ggplot(aes(x = var, y = relfreq, colour = var)) +
+  geom_segment(aes(xend = var, yend = 0)) +
+  geom_point(size = 2) +
+  scale_fill_viridis_d() +
+  coord_flip()
+
+# Extract the color vector:
+g1 <- ggplot_build(p1)
+my_cols1 <- unique(g1$data[[1]]["colour"])$colour
+
+# Now generate the plot with color points and corresponding color labels:
+p1 <-
+  p1_dat %>%
+    mutate(
+      color = my_cols1,
+      var = glue("<b style='color:{color}'>{var}</b>"),
+      var = factor(var, levels = var)
+    )  %>%
+    ggplot(aes(x = var, y = relfreq, colour = var)) +
+    geom_segment(aes(xend = var, yend = 0)) +
+    geom_point(size = 2) +
+    scale_fill_manual(values = my_cols1) +
+    coord_flip() +
+    theme_light() +
+    labs(x = "", y = "Relative frequency (%)") +
+    theme(legend.position="none",
+          axis.text.y = element_markdown(size = 7),
+          axis.title.x = element_text(size = 10, face = "bold"))
+
+
+## PART B
+# Load the saved object with the VSURF results (see the script `VSURF0.Rmd`):
+load("../VSURF/VSURF0Res.RData")
+
+# This gets the rowid's of duplicate models:
+dups <-
+  vsurf %>%
+  tibble::rowid_to_column() %>%
+  dplyr::select(rowid, indx) %>%
+  # Sort the indices:
+  dplyr::mutate(sorted = map(indx, sort)) %>%
+  # The filtering step identifies the duplicates:
+  dplyr::group_by(sorted) %>%
+  dplyr::filter(n() > 1) %>%
+  # Arrange so that the duplicates are shown together:
+  dplyr::arrange(sorted) %>%
+  # and filter out every other:
+  dplyr::filter(row_number() %% 2 == 1) %>%
+  # the rowid's of the duplicates to remove:
+  dplyr::pull(rowid)
+
+# Now we filter to a subset of models to pursue further.
+# Distinct, 6-9 vars, auc no less than 0.8
+vsurf.filtered <-
+  vsurf %>%
+  tibble::rowid_to_column() %>%
+  dplyr::mutate(no_vars = purrr::map(indx, length)) %>%
+  dplyr::mutate(var = map2(splits, indx, function(.splits, .indx) {
+    x <- analysis(.splits) %>% select(-Y)
+    names(x)[.indx]})) %>%
+  dplyr::select(rowid, no_vars, auc, var) %>%
+  tidyr::unnest(cols = c(no_vars, auc)) %>%
+  # just easier to call the column auc:
+  dplyr::rename(auc = .estimate) %>%
+  # apply our filtering criteria:
+  dplyr::filter(!rowid %in% dups, no_vars %in% 6:9, auc > 0.8) %>%
+  # arrange for better output representation:
+  dplyr::arrange(no_vars, rowid) 
+
+# The number of VSURF models:
+num_vsurf_mods <- nrow(vsurf.filtered)
+
+# The data for plotting:
+p2_dat <-
+  vsurf.filtered %>%
+  select(var) %>%
+  tidyr::unnest(cols = var) %>%
+  dplyr::group_by(var) %>%
+  dplyr::summarise(total_count = n(), relfreq = 100*(total_count/num_vsurf_mods)) %>%
+  # This trick updates the factor levels:
+  dplyr::arrange(total_count) %>%
+  dplyr::mutate(var = factor(var, levels = var))
+
+
+# Plot the data (the goal is to extract the color vector):
+p2 <- 
+  p2_dat %>%   
+  ggplot(aes(x = var, y = relfreq, colour = var)) +
+  geom_segment(aes(xend = var, yend = 0)) +
+  geom_point(size = 2) +
+  scale_fill_viridis_d() +
+  coord_flip()
+
+g2 <- ggplot_build(p2)
+my_cols2 <- unique(g2$data[[1]]["colour"])$colour
+
+
+# Now generate the plot with color points and corresponding color labels:
+p2 <-
+  p2_dat %>%
+    mutate(
+      color = my_cols2,
+      var = glue("<b style='color:{color}'>{var}</b>"),
+      var = factor(var, levels = var)
+    )  %>%
+    ggplot(aes(x = var, y = relfreq, colour = var)) +
+    geom_segment(aes(xend = var, yend = 0)) +
+    geom_point(size = 2) +
+    scale_fill_manual(values = my_cols2) +
+    coord_flip() +
+    theme_light() +
+    labs(x = "", y = "Relative frequency (%)") +
+    theme(legend.position="none",
+          axis.text.y = element_markdown(size = 7),
+          axis.title.x = element_text(size = 10, face = "bold"))
+
+# Put them together in one object:
+p12 <- p1 + p2
+
+p12 + plot_annotation(tag_levels = "A")
+```
+
+
+
+```{r Figure-3}
+# varSelRF models
+# Load the object (m1) containing the information on the models (see the `varSelRF0.Rmd` script):
+load("../varSelRF/varSelRFResII.RData")
+
+# The varSelRF M19:
+varSelRF_M19 <-
+  m1 %>%
+  dplyr::select(max.vars, max.no.vars, max.fmla, auc.outer) %>%
+  tidyr::unnest(cols = auc.outer) %>%
+  tibble::rownames_to_column() %>%
+  # 20 models:
+  dplyr::filter(.estimate >= 0.92, max.no.vars >= 9, max.no.vars <= 14) %>%
+  rename(vars = max.vars, no.vars = max.no.vars, fmla = max.fmla, auc = .estimate) %>%
+  # and we want model M19:
+  slice(19) %>%
+  mutate(model = "varSelRF_M19", .before = vars) %>%
+  mutate(vars = map(vars, function(x) x %>% pull(var))) %>%
+  select(model, no.vars, vars) %>%
+  # to have the same column names for varSelRF and VSURF model lists:
+  rename(no_vars = no.vars)
+
+
+# VSURF models:
+# Load the saved object with the VSURF results (see the script `VSURF0.Rmd`):
+load("../VSURF/VSURF0Res.RData")
+
+# This gets the rowid's of duplicate models in the vsurf object:
+dups <-
+  vsurf %>%
+  tibble::rowid_to_column() %>%
+  dplyr::select(rowid, indx) %>%
+  # Sort the indices:
+  dplyr::mutate(sorted = map(indx, sort)) %>%
+  # The filtering step identifies the duplicates:
+  dplyr::group_by(sorted) %>%
+  dplyr::filter(n() > 1) %>%
+  # Arrange so that the duplicates are shown together:
+  dplyr::arrange(sorted) %>%
+  # and filter out every other:
+  dplyr::filter(row_number() %% 2 == 1) %>%
+  # the rowid's of the duplicates to remove:
+  dplyr::pull(rowid)
+
+# Now we filter to a subset of models to pursue further.
+# Distinct, 6-9 vars, auc no less than 0.8
+vsurf.filtered <-
+  vsurf %>%
+  tibble::rowid_to_column() %>%
+  dplyr::mutate(no_vars = purrr::map(indx, length)) %>%
+  dplyr::mutate(vars = map2(splits, indx, function(.splits, .indx) {
+    x <- analysis(.splits) %>% select(-Y)
+    names(x)[.indx]})) %>%
+  dplyr::select(rowid, no_vars, auc, vars) %>%
+  tidyr::unnest(cols = c(no_vars, auc)) %>%
+  # just easier to call the column auc:
+  dplyr::rename(auc = .estimate) %>%
+  # apply our filtering criteria:
+  dplyr::filter(!rowid %in% dups, no_vars %in% 6:9, auc > 0.8) %>%
+  mutate(model = stringr::str_c("vsurf_M", 1:38)) %>%
+  slice(c(8:11, 13:15, 20, 21, 32)) %>%
+  select(model, no_vars, vars)
+
+# The model tibble:
+rf_mods <- 
+  bind_rows(varSelRF_M19, vsurf.filtered) %>%
+  select(vars) %>%
+  unnest(cols = vars) %>%
+  count(vars) %>%
+  arrange(n, vars) %>%
+  # Easier to visualize...
+  # This trick updates the factor levels:
+  dplyr::mutate(vars = factor(vars, levels = vars)) 
+
+# Plot the data (the goal is to extract the color vector):
+p3 <- 
+  rf_mods %>%   
+  ggplot(aes(x = vars, y = n, colour = vars)) +
+  geom_segment(aes(xend = vars, yend = 0)) +
+  geom_point(size = 2) +
+  scale_fill_viridis_d() +
+  coord_flip()
+
+g3 <- ggplot_build(p3)
+my_cols3 <- unique(g3$data[[1]]["colour"])$colour
+
+# Now generate the plot with color points and corresponding color labels:
+rf_mods %>%
+    mutate(
+      color = my_cols3,
+      vars = glue("<b style='color:{color}'>{vars}</b>"),
+      vars = factor(vars, levels = vars)
+    )  %>%
+    ggplot(aes(x = vars, y = n, colour = vars)) +
+    geom_segment(aes(xend = vars, yend = 0)) +
+    geom_point(size = 2) +
+    scale_fill_manual(values = my_cols3) +
+    coord_flip() +
+    scale_y_continuous(breaks = seq(0, 12, 2)) +
+    theme_light() +
+    labs(x = "", y = "Frequency") +
+    theme(legend.position="none",
+          axis.text.y = element_markdown(size = 7),
+          axis.title.x = element_text(size = 12, face = "bold"))
+```
+
+
+```{r Figure-4}
+# Load the varSelRF metrics objects:
+# (assumes this RData object has been created after running the `varSelRF1.R` script in the varSelRF folder)
+load("../varSelRF/varSelRF1TestMetrics.RData")
+# We only want the results after Bayes optimization of the tuning parameters:
+varselrf <- bayes_metrics
+# Clean up:
+rm(bayes_metrics, grid_metrics)
+
+# Load the VSURF metrics:
+# (assumes this RData object has been created after running the `VSURF1.R` script in the VSURF folder)
+load("../VSURF/VSURF1TestMetrics.RData")
+vsurf <- bayes_metrics
+rm(bayes_metrics)
+
+# Load the stacked model metrics:
+# (assumes this RData object has been created after running the `RFEnsembles0.R` script in the Ensembles folder)
+load("../Ensembles/StackedMetrics.RData")
+
+# This function is taken from https://cran.r-project.org/web/packages/egg/vignettes/Ecosystem.html
+# It is for combining plots, and placing a common legend.
+grid_arrange_shared_legend <-
+  function(...,
+           ncol = length(list(...)),
+           nrow = 1,
+           position = c("bottom", "right")) {
+    
+    plots <- list(...)
+    position <- match.arg(position)
+    g <-
+      ggplot2::ggplotGrob(plots[[1]] + theme(legend.position = position))$grobs
+    legend <- g[[which(sapply(g, function(x)
+      x$name) == "guide-box")]]
+    lheight <- sum(legend$height)
+    lwidth <- sum(legend$width)
+    gl <- lapply(plots, function(x)
+      x + theme(legend.position = "none"))
+    gl <- c(gl, ncol = ncol, nrow = nrow)
+    
+    combined <- switch(
+      position,
+      "bottom" = gridExtra::arrangeGrob(
+        do.call(gridExtra::arrangeGrob, gl),
+        legend,
+        ncol = 1,
+        heights = grid::unit.c(unit(1, "npc") - lheight, lheight)
+      ),
+      "right" = gridExtra::arrangeGrob(
+        do.call(gridExtra::arrangeGrob, gl),
+        legend,
+        ncol = 2,
+        widths = grid::unit.c(unit(1, "npc") - lwidth, lwidth)
+      )
+    )
+    
+    grid::grid.newpage()
+    grid::grid.draw(combined)
+    
+    # return gtable invisibly
+    invisible(combined)
+    
+  } # end function grid_arrange_shared_legend
+
+# A list of the variables we want from each stats object:
+vars2 <- c("id", "source", "mcc", "Se", "Sp", "mkd", "ifd", "auc", "prauc", "MCEN", "IMN")
+
+# Combine the stats for the various models into one object:
+dat2 <-
+  bind_rows(
+    # random forests from varSelRF:
+    varselrf %>% mutate(id = stringr::str_c("RF:", 1:20), source = "RF (varSelRF)") %>% select(all_of(vars2)),
+    # random forests from VSURF:
+    vsurf %>% mutate(id = stringr::str_c("RF:", 1:38), source = "RF (VSURF)") %>% select(all_of(vars2)),
+    # stack lasso:
+    stack_lasso_metrics %>% mutate(id = "Ens:Lasso", source = "Stacked (lasso)") %>% select(all_of(vars2)),
+    # stack ridge:
+    stack_ridge_metrics %>% mutate(id = "Ens:Ridge", source = "Stacked (ridge)") %>% select(all_of(vars2)),
+    # stack elasticnet:
+    stack_en_metrics %>% mutate(id = "Ens:EN", source = "Stacked (elastic net)") %>% select(all_of(vars2))
+    ) %>%
+  dplyr::mutate(source = factor(source, levels = c("RF (varSelRF)", "RF (VSURF)", "Stacked (lasso)", "Stacked (ridge)", "Stacked (elastic net)")))
+
+
+comp.plot.pub <- function(.df = dat2, .x, .y, .xlab, .ylab, .tag) {
+  # Plot variable 1 vs variable 2 for the varSelRF, VSURF, and stacked models
+  # Args:
+  #  .x = unquoted string for the x-axis variable
+  #  .y = unquoted string for the y-axis variable
+  #  .xlab = character string for the x-axis label
+  #  .ylab = character string for the y-axis label
+  #  .title = character string for the plot title
+  # Returns:
+  # a ggplot object
+  #
+  var1 <- enquo(.x)
+  var2 <- enquo(.y)
+  
+  .df %>%
+    dplyr::select(!!var1, !!var2, source) %>%
+    # ggplot(., aes(x = !!var1, y = !!var2, colour = source, shape = source, size = source)) +
+    ggplot(., aes(x = !!var1, y = !!var2, fill = source, shape = source, size = source)) +
+    # theme_bw() +
+    theme_light() +
+    # scale_shape_manual(values = c(16, 16, 18, 18, 18)) +
+    scale_shape_manual(values = c(21, 22, 23, 23, 23)) +
+    # because of the number of points, I reduced the size of the points for the RF models:
+    scale_size_manual(values = c(2, 2, 5, 5, 5)) +
+    # scale_colour_d3(palette = c("category10"), alpha = 0.6) +
+    scale_fill_d3(palette = c("category10"), alpha = 0.6) + 
+    geom_point() +
+    # change the legend position and shape:
+    theme(legend.position = "bottom", legend.direction = "horizontal", legend.box = "vertical") +
+    guides(
+           # colour = guide_legend(NULL, ncol = 5),
+           fill = guide_legend(NULL, ncol = 5),
+           shape = guide_legend(NULL, ncol = 5),
+           size = guide_legend(NULL, ncol = 5)) +
+    ylab(.ylab) +
+    theme(axis.title.y = element_text(face = "bold", size = 12)) +
+    theme(axis.text.y = element_text(size = rel(1.0))) +
+    xlab(.xlab) +
+    theme(axis.title.x = element_text(face = "bold", size = 12)) +
+    theme(axis.text.x = element_text(size = rel(1.0))) +
+    labs(title = NULL, tag = .tag)
+} # end function comp.plot.pub
+
+
+# Sensitivity and specificity:
+p1 <- comp.plot.pub(.x = Se, .y = Sp, .xlab = "Se", .ylab = "Sp", .tag = "A")
+  
+# Informedness (YI) and mcc:
+p2 <- comp.plot.pub(.x = ifd, .y = mcc, .xlab = "YI", .ylab = "MCC", .tag = "B")
+
+# PR-AUC and ROC-AUC:
+p3 <- comp.plot.pub(.x = auc, .y = prauc, .xlab = "ROC-AUC", .ylab = "PR-AUC", .tag = "C")
+
+# IMN and MCEN:
+p4 <- comp.plot.pub(.x = IMN, .y = MCEN, .xlab = "IMN", .ylab = "MCEN", .tag = "D")
+
+
+grid_arrange_shared_legend(p1, p2, p3, p4, ncol = 2, nrow = 2)
+```
+
+
+
+```{r Figure-5}
+# Load the varSelRF metrics objects (the RData file is created by the `varSelRF1.R` script):
+load("../varSelRF/varSelRF1TestMetrics.RData")
+# We only want the results after Bayes optimization of the tuning parameters:
+varselrf <- bayes_metrics
+# Clean up:
+rm(bayes_metrics, grid_metrics)
+
+# Load the VSURF metrics (this RData file is created by the `VSURF1.R` script):
+load("../VSURF/VSURF1TestMetrics.RData")
+vsurf <- bayes_metrics
+rm(bayes_metrics)
+
+
+# Load the performance stats for the models shown in the PloS Comput. Biol. paper:
+# https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008831
+prev.mods <- readr::read_csv("../Data/PreviousModelMetrics.csv", show_col_types = FALSE)
+
+prev.mods.filtered <-
+  prev.mods %>% 
+  # Filter to the individual LR models and the stacked regressions
+  dplyr::filter(str_detect(id, '^LR|^SL|^SR|^SEN')) %>%
+  # Some upfront pre-processing for labelling later on...
+  # For the regex, see https://stackoverflow.com/questions/41986730/create-new-column-with-dplyr-mutate-and-substring-of-existing-column 
+  dplyr::mutate(source = stringr::str_extract(source, "[^LR]+$") %>% stringr::str_trim()) %>%
+  dplyr::mutate(source = replace(source, source == "stacked (lasso)", "LRS (lasso)")) %>%
+  dplyr::mutate(source = replace(source, source == "stacked (ridge)", "LRS (ridge)")) %>%
+  dplyr::mutate(source = replace(source, source == "stacked (elasticnet)", "LRS (elastic net)"))
+
+
+# Here we want to do some pairwise plots of metrics
+
+# A list of the variables we want from each stats object:
+vars <- c("id", "source", "auc", "prauc", "Se", "Sp")
+
+# The data object:
+dat4 <-
+  bind_rows(
+    # The previous models:
+    prev.mods.filtered %>% select(all_of(vars)), 
+    # random forests from varSelRF:
+    varselrf %>% mutate(id = stringr::str_c("RF:", 1:20), source = "RF (varSelRF)") %>% select(all_of(vars)),
+    # random forests from VSURF:
+    vsurf %>% mutate(id = stringr::str_c("RF:", 1:38), source = "RF (VSURF)") %>% select(all_of(vars))  
+    ) %>%
+  dplyr::mutate(source = factor(source, levels = c("1st generation", "2nd generation", "3rd generation", "LRS (lasso)", "LRS (ridge)", "LRS (elastic net)", "RF (varSelRF)", "RF (VSURF)"))) %>%
+  dplyr::mutate(source2 = fct_collapse(source, LR = c("1st generation", "2nd generation", "3rd generation"), LRS = c("LRS (lasso)", "LRS (ridge)", "LRS (elastic net)"), RF = c("RF (varSelRF)", "RF (VSURF)")))
+
+
+# This function is taken from https://cran.r-project.org/web/packages/egg/vignettes/Ecosystem.html
+# It is for combining plots, and placing a common legend.
+grid_arrange_shared_legend <-
+  function(...,
+           ncol = length(list(...)),
+           nrow = 1,
+           position = c("bottom", "right")) {
+    
+    plots <- list(...)
+    position <- match.arg(position)
+    g <-
+      ggplot2::ggplotGrob(plots[[1]] + theme(legend.position = position))$grobs
+    legend <- g[[which(sapply(g, function(x)
+      x$name) == "guide-box")]]
+    lheight <- sum(legend$height)
+    lwidth <- sum(legend$width)
+    gl <- lapply(plots, function(x)
+      x + theme(legend.position = "none"))
+    gl <- c(gl, ncol = ncol, nrow = nrow)
+    
+    combined <- switch(
+      position,
+      "bottom" = gridExtra::arrangeGrob(
+        do.call(gridExtra::arrangeGrob, gl),
+        legend,
+        ncol = 1,
+        heights = grid::unit.c(unit(1, "npc") - lheight, lheight)
+      ),
+      "right" = gridExtra::arrangeGrob(
+        do.call(gridExtra::arrangeGrob, gl),
+        legend,
+        ncol = 2,
+        widths = grid::unit.c(unit(1, "npc") - lwidth, lwidth)
+      )
+    )
+    
+    grid::grid.newpage()
+    grid::grid.draw(combined)
+    
+    # return gtable invisibly
+    invisible(combined)
+    
+  } # end function grid_arrange_shared_legend
+
+
+comp.plot.pub <- function(.df = dat4, .x, .y, .xlab, .ylab, .tag) {
+  # Plot variable 1 vs variable 2 for the LR, LRS and RF models
+  # Args:
+  #  .df = data frame with the metrics
+  #  .x = unquoted string for the x-axis variable
+  #  .y = unquoted string for the y-axis variable
+  #  .xlab = character string for the x-axis label
+  #  .ylab = character string for the y-axis label
+  #  .tag = character string for the plot tag
+  # Returns:
+  # a ggplot object
+  #
+  var1 <- enquo(.x)
+  var2 <- enquo(.y)
+  
+  
+  .df %>%
+    dplyr::select(!!var1, !!var2, source2) %>%
+    ggplot(., aes(x = !!var1, y = !!var2, shape = source2, size = source2, fill = source2)) +
+    theme_light() +
+    # Add more descriptive labels (must do for both shape and size):
+    # scale_shape_manual(values = c(16, 18, 1), labels = c("LR", "LRS", "RF")) +
+    scale_shape_manual(values = c(21, 22, 23), labels = c("LR", "LRS", "RF")) +
+    # because of the number of points, I reduced the size of the points for the RF models:
+    scale_size_manual(values = c(2, 4, 2), labels = c("LR", "LRS", "RF")) +
+    # geom_point(colour = "grey20", alpha = 0.6) +
+    geom_point() +
+    scale_fill_d3(palette = c("category10"), alpha = 0.6) + 
+    # change the legend position and shape:
+    theme(legend.position = "bottom", legend.direction = "horizontal", legend.box = "vertical") +
+    # Legend must have the same title to effectively combine:
+    guides(shape = guide_legend(title = "Model", ncol = 3),
+           size = guide_legend(title = "Model", ncol = 3),
+           fill = guide_legend(title = "Model", ncol = 3)) +
+    labs(x = .xlab, y = .ylab) +
+    theme(axis.title.y = element_text(face = "bold", size = 12)) +
+    theme(axis.text.y = element_text(size = rel(1.0))) +
+    theme(axis.title.x = element_text(face = "bold", size = 12)) +
+    theme(axis.text.x = element_text(size = rel(1.0))) +
+    labs(title = NULL, tag = .tag)
+  } # end function comp.plot.pub
+
+
+p4 <- comp.plot.pub(.x = Se, .y = Sp, .xlab = "Se", .ylab = "Sp", .tag = "A") + theme(aspect.ratio = 1)
+
+p5 <- comp.plot.pub(.x = auc, .y = prauc, .xlab = "ROC-AUC", .ylab = "PR-AUC", .tag = "B") + theme(aspect.ratio = 1)
+
+# But the grid_arrange_shared_legend function comes to the rescue:
+# grid_arrange_shared_legend(p4, p5, ncol = 1, nrow = 2)
+grid_arrange_shared_legend(p4, p5, ncol = 2, nrow = 1)
+```
+
+
+```{r Figure-6}
+# Load the varSelRF metrics objects (the RData file is created by the `varSelRF1.R` script):
+load("../varSelRF/varSelRF1TestMetrics.RData")
+# We only want the results after Bayes optimization of the tuning parameters:
+varselrf <- bayes_metrics
+# Clean up:
+rm(bayes_metrics, grid_metrics)
+
+# Load the VSURF metrics (the RData file is created by the `VSURF1.R` script): 
+load("../VSURF/VSURF1TestMetrics.RData")
+vsurf <- bayes_metrics
+rm(bayes_metrics)
+
+
+# Load the performance stats for the models shown in the PloS Comput. Biol. paper:
+# https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008831
+prev.mods <- readr::read_csv("../Data/PreviousModelMetrics.csv", show_col_types = FALSE)
+
+prev.mods.filtered <-
+  prev.mods %>% 
+  # Filter to the individual LR models, soft vote, and the stacked regressions
+  dplyr::filter(str_detect(id, '^LR|^S')) %>%
+  # Some upfront pre-processing for labelling later on...
+  # For the regex, see https://stackoverflow.com/questions/41986730/create-new-column-with-dplyr-mutate-and-substring-of-existing-column 
+  dplyr::mutate(source = stringr::str_extract(source, "[^LR]+$") %>% stringr::str_trim()) %>%
+  dplyr::mutate(source = replace(source, source == "(soft vote)", "LR (soft vote)")) %>%
+  dplyr::mutate(source = replace(source, source == "stacked (lasso)", "LRS (lasso)")) %>%
+  dplyr::mutate(source = replace(source, source == "stacked (ridge)", "LRS (ridge)")) %>%
+  dplyr::mutate(source = replace(source, source == "stacked (elasticnet)", "LRS (elastic net)"))
+
+
+# A list of the variables we want from each stats object:
+vars <- c("id", "source", "cp.val", "Brier", "mcc", "ifd")
+
+# The data object:
+dat3 <-
+  bind_rows(
+    prev.mods.filtered %>% select(all_of(vars)),
+    # random forests from varSelRF:
+    varselrf %>% mutate(id = stringr::str_c("RF:", 1:20), source = "RF (varSelRF)") %>% select(all_of(vars)),
+    # random forests from VSURF:
+    vsurf %>% mutate(id = stringr::str_c("RF:", 1:38), source = "RF (VSURF)") %>% select(all_of(vars))  
+    ) %>%
+  dplyr::mutate(source = factor(source, levels = c("1st generation", "2nd generation", "3rd generation", "LR (soft vote)", "LRS (lasso)", "LRS (ridge)", "LRS (elastic net)", "RF (varSelRF)", "RF (VSURF)")))
+
+
+plotMetricPub <- function(.x = dat3, .mtc) {
+  # Plots the specified metric for each model, by model generation or algorithm
+  # This is a modification of the plotMetric function for a B&W graphic
+  # Args:
+  #  .x = tibble or data frame holding the metrics for each fit model
+  #  .mtc = unquoted string for the metric
+  # Returns:
+  #  a dot plot of the metric values
+  #
+  mtc <- enquo(.mtc)
+  
+  # the axis label:
+  .ylab <- as_label(mtc) %>% stringr::str_to_upper()
+  
+  # We need this object for jittering the individual points of the models:
+  x_sub <-
+    .x %>%
+    dplyr::filter(!stringr::str_detect(source, "LRS"), !stringr::str_detect(source, "soft vote"))
+  
+  # Data of the LRS and soft vote models:
+  x_sub_II <-
+    .x %>%
+    dplyr::filter(stringr::str_detect(source, "LRS") | stringr::str_detect(source, "soft vote"))
+  
+  .x %>%
+    ggplot(., aes(x = source, y = !!mtc, fill = source)) +
+    # Use this little trick to plot the ensembles as larger points
+    # Plot the means first, use an alpha setting for transparency:
+    stat_summary(data = x_sub_II, fun = "mean", geom = "point", size = 5, alpha = 0.6, shape = 21) +
+    # So that you plot all factor levels:
+    scale_x_discrete(drop = FALSE) +
+    # Jitter the individual points:
+    geom_jitter(data = x_sub, position = position_jitter(seed = 2019, width = 0.1), size = 2.5, shape = 21) +
+    coord_flip() +
+    scale_fill_d3(palette = c("category10"), alpha = 0.6) +  
+    labs(x = NULL, y = .ylab) +
+    theme_light() +
+    theme(
+      legend.position = "none",
+      axis.title.x = element_text(face = "bold", size = 12),
+      axis.text.x  = element_text(size = 9, angle = 0),
+      axis.title.y = element_text(size = 12, angle = 90, face = "bold"),
+      axis.text.y  = element_text(size = 9),
+      panel.grid = element_blank()
+    )
+}  
+
+
+# The individual plots:
+p1 <- plotMetricPub(.x = dat3, .mtc = Brier) + ylab("Brier score")
+
+p2 <- plotMetricPub(.x = dat3, .mtc = cp.val) + ylab("Cut-point") + 
+  theme(axis.text.y = element_blank()
+      )
+
+p3 <- plotMetricPub(.x = dat3, .mtc = mcc)
+
+p4 <- plotMetricPub(.x = dat3, .mtc = ifd) + ylab("YI") +
+  theme(axis.text.y = element_blank()
+      )
+
+
+# Put them together in one object:
+p1234 <- p1 + p2 + p3 + p4
+
+p1234 + plot_annotation(tag_levels = "A")
+```
+
+
+```{r Figure-7}
+## My modifications:
+theme_bluewhite <- function (base_size = 11, base_family = "serif") {
+  theme_light() %+replace% 
+    theme(
+      text = element_text(family = "serif"),
+      # panel.grid.major  = element_line(color = "white"),
+      # panel.background = element_rect(fill = "grey97"),
+      # panel.border = element_rect(color = "darkred", fill = NA, size = 1), ##05014a
+      # axis.line = element_line(color = "grey97"),
+      axis.ticks = element_line(color = "grey25"),
+      axis.title = element_text(size = 10),
+      axis.text = element_text(color = "grey25", size = 10),
+      legend.title = element_text(size = 10),
+      legend.text = element_text(size = 10),
+      plot.title = element_text(size = 15, hjust = 0.5),
+      strip.background = element_rect(fill = '#05014a'),
+      strip.text = element_text(size = 10, colour = 'white'), # changes the facet wrap text size and color
+      panel.grid.minor = element_blank(),
+      legend.position = "bottom"
+    )
+}
+
+# Load the Shapley values and fhb_test data (assumes the RData object was created after running the script `ShapleyValues.R` in the SHAPvalues folder):
+load("../SHAPvalues/shap.RData")
+
+
+# Long format for the variable values (except resist), called rfvalue
+foo1 <-
+  fhb_test %>%
+  dplyr::select(!resist, -Y) %>%
+  dplyr::mutate(ID = 1:nrow(.), .before = everything()) %>%
+  tidyr::pivot_longer(!ID, names_to = "variable", values_to = "rfvalue")
+
+# Long format for the SHAP values:
+foo2 <-
+  ex.all %>%
+  tibble::as_tibble() %>%
+  dplyr::select(!resist) %>%
+  dplyr::mutate(ID = 1:nrow(.), .before = everything()) %>%
+  tidyr::pivot_longer(!ID, names_to = "variable", values_to = "value")
+
+# Long format for stdvalue:
+foo3 <- 
+  fhb_test %>%
+  dplyr::select(!resist, -Y) %>%
+  dplyr::transmute(across(where(is.numeric), ~(.x - min(.x))/(max(.x) - min(.x)))) %>%
+  dplyr::mutate(ID = 1:nrow(.), .before = everything()) %>%
+  tidyr::pivot_longer(!ID, names_to = "variable", values_to = "stdfvalue")
+
+# Merge into one tibble:
+foo4 <- 
+  dplyr::inner_join(foo1, foo2, by = c("ID", "variable")) %>%
+  dplyr::inner_join(., foo3, by = c("ID", "variable"))
+  
+
+
+foo4 %>%
+  ggplot() +
+  coord_flip() +
+  ggforce::geom_sina(aes(
+    x = variable,
+    y = value,
+    color = stdfvalue),
+    method = "counts", maxwidth = 1, size = 1, alpha = 0.8, seed = 648) +
+  scale_color_gradient(
+    low = "#FDE725FF",
+    high = "darkblue",
+    breaks = c(0, 1),
+    labels = c("     Low", "     High"),
+    guide = guide_colorbar(barwidth = 12, barheight = 0.3)) +
+  geom_hline(yintercept = 0) +
+  theme_bluewhite() +
+  labs(x = "", y = "SHAP value (impact on model output)", color = "Variable value") +
+  ggtitle("SHapley Additive exPlanations (SHAP)")
+```
+

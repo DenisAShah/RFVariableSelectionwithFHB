@@ -1,0 +1,528 @@
+---
+output:
+  github_document:
+    toc: TRUE
+---
+
+
+Variable selection with VSURF
+=========
+
+<!-- Run on R 4.1.3 -->
+<!-- Data files created with this script: -->
+<!--   VSURF0Res.RData -->
+
+# Objective(s)
+* variable selection with the VSURF algorithm
+
+# Notes
+* some explanations on how this was set up
+* the VSURF algorithm is attractive, because it does variable screening in three steps, starting with eliminating variables that are not related to the response (removal of irrelevant variables) and ending with a set of uncorrelated variables that predict well (the end goal is predictive performance).
+* the downside is that the algorithm is computationally expensive. And we would want to run it several times to check for stability and variance in the set of predictors returned.
+* preliminary explorations showed that it would take too long to run (days) on the full set of 300+ predictors. In fact, [Speiser et al. 2019](https://doi.org/10.1016/j.eswa.2019.05.028) recommend using it on datasets with 50 or less predictors.
+* as a workaround (compromise), we apply the VSURF algorithm to the set of 77 predictors selected with the Boruta algorithm.
+* to get an idea of variable selection stability/variance, we use 5-fold cross-validation folds, repeated 10 times. This gives us enough data in the assessment part of the split for testing (getting an estimate of auc), and running the algorithm 50 times gives us data for looking at variable selection frequency.
+* still took over 6 hr to complete.
+* however, we had variables selected in every run.
+
+
+```{r knitr-setup, include=FALSE, eval=TRUE}
+options(digits = 3)
+require(knitr)
+## options
+knitr::opts_chunk$set(eval = TRUE, echo = FALSE, cache = TRUE, fig.path = '../Figures/VSURF/', fig.height = 5)
+```
+
+---------------------------------------------------------------------------------------
+
+
+```{r Libraries, eval=TRUE, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(tidymodels)
+# themis is not part of tidymodels:
+library(themis)
+library(OptimalCutpoints)
+library(viridis)
+
+library(VSURF)
+library(ranger)
+
+library(kableExtra)
+
+library(conflicted)
+
+conflict_prefer("col_factor", "readr")
+
+tidymodels_prefer()
+```
+
+
+```{r Load-and-Process-Data, echo=FALSE, eval=TRUE}
+# Read the FHB dataset:
+# (Make sure your path is correctly specified)
+source("../ReadFHBDataset.R")
+
+# The variables selected after running Boruta:
+load("../Boruta/BorutaResSmall.RData")
+
+Boruta_vars <- 
+  Boruta_res %>%
+  dplyr::select(confirmed_smry) %>%
+  # flatten out the list of tibbles:
+  tidyr::unnest(cols = confirmed_smry) %>%
+  dplyr::group_by(var) %>%
+  dplyr::summarise(total_count = sum(n)) %>%
+  dplyr::filter(total_count >= 2475) %>%
+  dplyr::pull(var)
+
+
+# Subset to the response and the set of vars selected via Boruta:
+X1 <- 
+  X %>%
+  # Set up Y as a factor (tidymodels and VSURF):
+  dplyr::mutate(Y = ifelse(S < 10, "Nonepi", "Epi")) %>%
+  # The first level is the one you want to predict:
+  dplyr::mutate(Y = factor(Y, levels = c("Epi", "Nonepi"))) %>%
+  # Set up for the wc variable as in Shah et al. (2013)
+  dplyr::mutate(wc = "NA") %>%
+  dplyr::mutate(wc = replace(wc, type == "spring", "sw")) %>%
+  dplyr::mutate(wc = replace(wc, type == "winter" & corn == 0, "wwnoc")) %>%
+  dplyr::mutate(wc = replace(wc, type == "winter" & corn == 1, "wwc")) %>%
+  dplyr::mutate(wc = factor(wc, levels = c("sw", "wwnoc", "wwc"))) %>%
+  dplyr::select(Y, all_of(Boruta_vars))
+
+
+rm(X, Boruta_res, Boruta_vars)
+```
+
+
+<!-- ## Resamples -->
+```{r Resamples-Setup, eval=TRUE, echo=FALSE}
+set.seed(14092)
+
+# Because of the time VSURF takes to run, and for obtaining results in a relatively timely manner, I am going to use 5-fold cross-validated folds (which gives a reasonable number (about 200) of obs in the assessment partition), but repeated 10 times.
+folds <- vfold_cv(X1, v = 5, repeats = 10, strata = Y)
+
+
+# Have a look at the resampling object:
+# folds
+# folds %>% purrr::pluck("splits", 1)
+# folds %>% purrr::pluck("splits", 1) %>% analysis() %>% names()
+```
+
+
+```{r Fitting-Functions, eval=FALSE, echo=FALSE}
+sel_vars <- function(object) {
+  # Run VSURF and save the indices of the selected vars
+  # Args:
+  #  object = an `rsplit` object, in this case the split column
+  # Returns:
+  #  A vector of the indices of the selected vars
+  #
+  # Set up the matrix of the predictors (x) and vector of the response (y):
+  x <- analysis(object) %>% select(-Y)
+  y <- analysis(object) %>% pull(Y)
+
+
+  set.seed(14092)
+  # It is possible that VSURF returns only one or no predictors, so need to catch if/when this occurs:
+  z <- tryCatch(VSURF(x = x, y = y, parallel = TRUE), error = function(cond) "skip")
+  
+  # return(z$varselect.pred)
+  
+  if(class(z)[1] == "character"|length(z$varselect.pred) == 0) {
+  return(NA)
+  } else {
+	return(z$varselect.pred)
+	}
+}
+
+
+# RF model specification:
+rf_spec <- rand_forest(trees = 1000) %>%
+  set_mode("classification") %>%
+  set_engine("ranger", seed = 55)
+
+
+get_auc <- function(object, indx) {
+  # Return the ROC-AUC on the assessment part of the split
+  # Args:
+  #  object = an rsplit object, i.e. the splits column
+  #  indx = the column of the indices of the vars selected by VSURF
+  # Returns:
+  #  the roc_auc for the prediction of a RF the model on the assessment part of the split, after being trained (without tuning) on the analysis part of the split
+  #
+  # The predictor vars:
+  x <- analysis(object) %>% select(-Y)
+  
+  # In case VSURF has returned only one or no predictors:
+  if (length(indx) <= 1) {
+    return(tibble(.estimate = NA))
+  # Otherwise proceed with fitting the RF model to the selected variables:  
+    } else {
+    # Create a formula with the vars selected by VSURF:
+    fmla <- as.formula(paste("Y ~ ", paste(names(x)[indx], collapse =  "+")))
+
+    # Set up the workflow:
+    rf_wf <- 
+      workflow() %>%
+      add_formula(fmla) %>%
+      add_model(rf_spec) %>%
+      # Fit the model on the analysis part of the rsplit object:
+      fit(data = analysis(object))
+  
+    # Set up the predictions on the assessment part of the rsplit object:
+    rf_pred <- 
+      # Get the predicted probabilities:
+      predict(rf_wf, assessment(object), type = "prob") %>% 
+      # Add the true outcome data back in:
+      dplyr::bind_cols(assessment(object) %>% select(Y))
+  
+    # Get the roc_auc:
+    rf_pred %>%  
+      roc_auc(truth = Y, .pred_Epi, options = list(smooth = TRUE)) %>%
+      dplyr::select(.estimate)
+  }  # end of the else statement
+  }  # end function get_auc
+```
+
+
+```{r Fit-and-Save-Models, eval=FALSE, echo=FALSE}
+## What you want to do:
+# For each split:
+# 1. Run VSURF on the analysis part of the resample
+# 2. Save the indices of the selected variables
+# 3. Use the indices to create a model formula and fit a RF on the analysis part of the resample
+# 4. Predict on the assessment part of the resample
+# This will give you estimates of RF model performance using the set of variables selected by VSURF
+
+start <- Sys.time()
+vsurf <-
+  folds %>%
+  dplyr::mutate(indx = purrr::map(splits, sel_vars)) %>%
+  dplyr::mutate(auc = purrr::map2(splits, indx, get_auc))
+end <- Sys.time()
+
+difftime(end, start, units = "mins")  # 394 min = 6.6 hr!!
+
+# Don't want to have to rerun:
+save(vsurf, file = "VSURF0Res.RData")
+```
+
+
+```{r Load-fitted-object, eval=TRUE, echo=FALSE}
+# Load the saved object with the VSURF results:
+load("VSURF0Res.RData")
+```
+
+
+# Number of variables selected
+* the algorithm was run on each of 5 cross-validation folds, repeated 10 times (hence run on a total of 50 folds)
+
+## Summary
+* on average, 7-8 variables per model
+* no. of variables selected ranged from 5 to 12, but no more than 12
+
+```{r number-vars-per-fold-smry, eval=TRUE, echo=FALSE}
+# The average number of selected variables per fold:
+vsurf %>%
+  dplyr::mutate(no_vars = map(indx, length)) %>%
+  dplyr::select(no_vars) %>%
+  tidyr::unnest(cols = c(no_vars)) %>%
+  dplyr::summarise(min = min(no_vars), mean = mean(no_vars), max = max(no_vars))
+```
+
+## Graphic
+* 6-9 variables selected were the most common
+
+```{r number-vars-per-fold-dotplot, eval=TRUE, echo=FALSE}
+# The variables that were **not** confirmed in each of the 2500 Boruta runs:
+d <-
+  vsurf %>%
+  dplyr::mutate(no_vars = map(indx, length)) %>%
+  dplyr::select(no_vars) %>%
+  tidyr::unnest(cols = c(no_vars)) %>%
+  dplyr::group_by(no_vars) %>%
+  dplyr::summarise(total_count = n()) %>%
+  # Sort from those selected the most to the least:
+  dplyr::arrange(desc(total_count))
+
+# Easier to visualize...
+d %>%
+  # This trick updates the factor levels:
+  dplyr::arrange(no_vars) %>%
+  dplyr::mutate(no_vars = factor(no_vars, levels = no_vars)) %>%   
+  ggplot(aes(x = no_vars, y = total_count)) +
+  geom_segment(aes(xend = no_vars, yend = 0)) +
+  geom_point(size = 4, colour = "orange") +
+  coord_flip() +
+  theme_bw() +
+  xlab("No. variables") +
+  ylab("Frequency")
+```
+
+
+# No. times a variable was selected across all folds
+* Out of the 77 variables started with, only 31 were selected by VSURF, and some not that very often.
+* How does this compare to the variables selected by the varSelRF algorithm?
+
+## Table
+```{r number-times-selected, eval=TRUE, echo=FALSE}
+# This shows that across all the Boruta runs, we have 89 variables confirmed in at least one run.  That is, basically no variables were dropped, given the input data matrix had 90 predictors:
+vsurf %>%
+  dplyr::mutate(var = purrr::map2(splits, indx, function(.splits, .indx) {
+    x <- analysis(.splits) %>% select(-Y)
+    names(x)[.indx]})) %>%
+  dplyr::select(var) %>%
+  tidyr::unnest(cols = var) %>%
+  dplyr::group_by(var) %>%
+  dplyr::summarise(total_count = n()) %>%
+  dplyr::arrange(var) %>%
+  kable(., row.names = TRUE)
+```
+
+
+## Graphic
+* I think can be used as a variable importance measure...
+
+```{r number-times-selected-dotplot, eval=TRUE, echo=FALSE}
+# The variable that were **not** confirmed in each of the 2500 Boruta runs:
+vsurf %>%
+  dplyr::mutate(var = purrr::map2(splits, indx, function(.splits, .indx) {
+    x <- analysis(.splits) %>% select(-Y)
+    names(x)[.indx]})) %>%
+  dplyr::select(var) %>%
+  tidyr::unnest(cols = var) %>%
+  dplyr::group_by(var) %>%
+  dplyr::summarise(total_count = n()) %>%
+  # Sort from those selected the most to the least:
+  dplyr::arrange(desc(total_count)) %>%
+  # Easier to visualize...
+  # This trick updates the factor levels:
+  dplyr::arrange(total_count) %>%
+  dplyr::mutate(var = factor(var, levels = var)) %>%   
+  ggplot(aes(x = var, y = total_count)) +
+  geom_segment(aes(xend = var, yend = 0)) +
+  geom_point(size = 4, colour = "orange") +
+  coord_flip() +
+  theme_bw() +
+  xlab("") +
+  ylab("Frequency")
+```
+
+
+
+# Duplicates
+* there were 4 sets of selected variables that were the same (2 duplicates per set). These are listed below. The duplicates do not have the same AUCs, because of being trained and tested on different folds.
+
+```{r duplicate-models, eval=TRUE, echo=FALSE}
+vsurf %>%
+  dplyr::select(indx, auc) %>%
+  # Sort the indices:
+  dplyr::mutate(sorted = map(indx, sort)) %>%
+  dplyr::select(sorted, auc) %>%
+  # The filtering step identifies the duplicates:
+  dplyr::group_by(sorted) %>%
+  dplyr::filter(n() > 1) %>%
+  # Arrange so that the duplicates are shown together:
+  dplyr::arrange(sorted) %>%
+  kable(., row.names = TRUE, col.names = c("Var index", "auc"))
+```
+
+
+# AUC
+## Table
+```{r auc-table, eval=TRUE, echo=FALSE}
+vsurf %>%
+  dplyr::select(auc) %>%
+  tidyr::unnest(cols = auc) %>%
+  # just a better name:
+  dplyr::rename(auc = .estimate) %>%
+  dplyr::summarise(min = min(auc), mean = mean(auc), max = max(auc), stddev = sd(auc)) %>%
+  kable(., row.names = TRUE)
+```
+
+## Histogram
+* the AUCs on the assessment partition of the folds, after fitting RF models (based on the selected variables) on the analysis partitions.
+* one model is not doing so well
+
+```{r auc-histogram, eval=TRUE, echo=FALSE}
+vsurf %>%
+  dplyr::select(auc) %>%
+  tidyr::unnest(cols = auc) %>%
+  ggplot(., aes(x = .estimate)) +
+  geom_histogram(binwidth = 0.01, fill = "grey80", colour = "black") +
+  theme_bw() +
+  xlab("AUC")
+```
+
+
+## AUC and no. of variables
+* no discernible pattern between AUC and the no. of vars selected
+
+```{r auc-num-vars, eval=TRUE, echo=FALSE}
+# Overall mean auc:
+mean.auc <-
+  vsurf %>%
+  dplyr::select(auc) %>%
+  tidyr::unnest(cols = c(auc)) %>%
+  dplyr::summarise(mean.auc = mean(.estimate)) %>%
+  dplyr::pull(mean.auc)
+
+vsurf %>%
+  dplyr::mutate(no_vars = map(indx, length)) %>%
+  dplyr::select(no_vars, auc) %>%
+  tidyr::unnest(cols = c(no_vars, auc)) %>%
+  ggplot(., aes(x = no_vars, y = .estimate)) +
+  geom_hline(yintercept = mean.auc, linetype = "dashed") + 
+  geom_point(alpha = 0.8, colour = "cornflowerblue") +
+  theme_bw()
+```
+
+
+## The poor-performance model
+* the one model with low AUC.  Maybe the combination of these six predictors is not the greatest.
+
+```{r auc-poor, eval=TRUE, echo=FALSE}
+vsurf %>%
+  dplyr::mutate(var = purrr::map2(splits, indx, function(.splits, .indx) {
+    x <- analysis(.splits) %>% select(-Y)
+    names(x)[.indx]})) %>%
+  dplyr::select(auc, var) %>%
+  tidyr::unnest(cols = auc) %>%
+  filter(.estimate < 0.8)  %>%
+  kable(., row.names = TRUE, col.names = c("auc", "vars"))
+```
+
+
+# Filtering models
+* distinct, 6-9 variables, auc not less than 0.8
+* this gives us a candidate set of 38 RF models to evaluate further
+* still a lot, but we have the code from the varSelRF model evaluations to draw on
+* we have 9 models listed here with 9 predictors each. From varSelRF, we also have 9 models with 9 predictors each. Are the two sets unique? Or are there overlaps?
+
+```{r filtered-models, eval=TRUE, echo=FALSE}
+# This gets the rowid's of duplicate models:
+dups <-
+  vsurf %>%
+  tibble::rowid_to_column() %>%
+  dplyr::select(rowid, indx) %>%
+  # Sort the indices:
+  dplyr::mutate(sorted = map(indx, sort)) %>%
+  # The filtering step identifies the duplicates:
+  dplyr::group_by(sorted) %>%
+  dplyr::filter(n() > 1) %>%
+  # Arrange so that the duplicates are shown together:
+  dplyr::arrange(sorted) %>%
+  # and filter out every other:
+  dplyr::filter(row_number() %% 2 == 1) %>%
+  # the rowid's of the duplicates to remove:
+  dplyr::pull(rowid)
+
+# Now we filter to a subset of models to pursue further.
+# Distinct, 6-9 vars, auc no less than 0.8
+vsurf.filtered <-
+  vsurf %>%
+  tibble::rowid_to_column() %>%
+  dplyr::mutate(no_vars = purrr::map(indx, length)) %>%
+  dplyr::mutate(var = map2(splits, indx, function(.splits, .indx) {
+    x <- analysis(.splits) %>% select(-Y)
+    names(x)[.indx]})) %>%
+  dplyr::select(rowid, no_vars, auc, var) %>%
+  tidyr::unnest(cols = c(no_vars, auc)) %>%
+  # just easier to call the column auc:
+  dplyr::rename(auc = .estimate) %>%
+  # apply our filtering criteria:
+  dplyr::filter(!rowid %in% dups, no_vars %in% 6:9, auc > 0.8) %>%
+  # arrange for better output representation:
+  dplyr::arrange(no_vars, rowid) 
+
+vsurf.filtered %>%
+  kable(., row.names = TRUE, col.names = c("rowid", "no. vars", "auc", "vars"))
+```
+
+
+# Variables used by the filtered models
+```{r Helper-functions, eval=TRUE, echo=FALSE}
+# Helper functions (to avoid decimal breaks in the axis tick labels):
+# https://stackoverflow.com/questions/61915427/ggplot-integer-breaks-on-facets
+my_ceil <- function(x) {
+  ceil <- ceiling(max(x))
+  ifelse(ceil > 1 & ceil %% 2 == 1, ceil + 1, ceil)
+}
+
+my_breaks <- function(x) { 
+  ceil <- my_ceil(max(x))
+  unique(ceiling(pretty(seq(0, ceil))))
+} 
+
+my_limits <- function(x) { 
+  ceil <- my_ceil(x[2])
+  c(x[1], ceil)
+}
+```
+
+## No. unique variables
+```{r vars-num-unique, eval=TRUE, echo=FALSE}
+# How many unique variables were used?  Answer = 27
+vsurf.filtered %>%
+  select(var) %>%
+  tidyr::unnest(cols = var) %>%
+  dplyr::distinct() %>%
+  dplyr::arrange(var) %>%
+  kable(., row.names = TRUE)
+```
+
+
+## No. variables per model
+```{r vars-per-model, eval=TRUE, echo=FALSE}
+vsurf.filtered %>%
+  dplyr::select(no_vars) %>%
+  dplyr::group_by(no_vars) %>%
+  dplyr::summarise(total_count = n()) %>%
+  # Easier to visualize...
+  # This trick updates the factor levels:
+  dplyr::arrange(no_vars) %>%
+  dplyr::mutate(no_vars = factor(no_vars, levels = no_vars)) %>%   
+  ggplot(aes(x = no_vars, y = total_count)) +
+  geom_segment(aes(xend = no_vars, yend = 0)) +
+  geom_point(size = 4, colour = "orange") +
+  coord_flip() +
+  scale_y_continuous(breaks = my_breaks, limits = my_limits) +
+  theme_bw() +
+  xlab("No. variables") +
+  ylab("Frequency")
+```
+
+
+## No. times each variable was used
+```{r vars-num-times-used, eval=TRUE, echo=FALSE}
+# How many times was each variable used?
+vsurf.filtered %>%
+  select(var) %>%
+  tidyr::unnest(cols = var) %>%
+  dplyr::group_by(var) %>%
+  dplyr::summarise(total_count = n()) %>%
+  # dplyr::arrange(desc(total_count))
+  # This trick updates the factor levels:
+  dplyr::arrange(total_count) %>%
+  dplyr::mutate(var = factor(var, levels = var)) %>%   
+  ggplot(aes(x = var, y = total_count)) +
+  geom_segment(aes(xend = var, yend = 0)) +
+  geom_point(size = 1, colour = "orange") +
+  coord_flip() +
+  theme_bw() +
+  xlab("") +
+  ylab("Frequency") +
+  theme(axis.text.y  = element_text(size = 6),
+        axis.title.x = element_text(size = 12, face = "bold"))
+```
+
+
+
+# Computational environment
+```{r SessionInfo, eval=TRUE, echo=FALSE, results='markup'}
+R.Version()$version.string
+R.Version()$system
+sessionInfo()
+```

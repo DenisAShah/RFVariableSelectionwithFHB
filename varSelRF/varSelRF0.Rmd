@@ -1,0 +1,713 @@
+---
+output:
+  github_document:
+    toc: TRUE
+---
+
+
+Variable selection with varSelRF
+=========
+
+
+<!-- Data files created with this script: -->
+<!--  varSelRFResII.RData -->
+
+
+# Objective(s)
+* use the `varSelRF` algorithm to reduce the set of variables returned by Boruta
+* hopefully without a loss of predictive performance
+
+
+The `varSelRF` algorithm is described in [this paper](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-8-328).
+
+<!-- NOTE: run on R 4.1.3 -->
+
+```{r knitr-setup, include=FALSE, eval=TRUE}
+options(digits = 3)
+require(knitr)
+## options
+knitr::opts_chunk$set(eval = TRUE, echo = FALSE, cache = TRUE, fig.path = '../Figures/varSelRF/', fig.height = 4)
+```
+
+
+---------------------------------------------------------------------------------------
+
+
+```{r Libraries, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tidymodels)
+
+library(parallel)
+library(varSelRF)
+
+library(kableExtra)
+
+library(conflicted)
+
+tidymodels_prefer()
+
+conflict_prefer("col_factor", "readr")
+```
+
+
+```{r Load-Data, eval=TRUE, echo=FALSE}
+# Read the FHB dataset from the .csv file:
+# NOTE: set the proper paths for your system:
+source("../ReadFHBDataset.R")
+
+# Some pre-processing:
+io <- 
+  X %>%
+  # Set up Y as a factor (tidymodels):
+  dplyr::mutate(Y = ifelse(S < 10, "Nonepi", "Epi")) %>%
+  # The first level is the one you want to predict:
+  dplyr::mutate(Y = factor(Y, levels = c("Epi", "Nonepi"))) %>%
+  # Set up for the wc variable as in Shah et al. (2013)
+  dplyr::mutate(wc = "NA") %>%
+  dplyr::mutate(wc = replace(wc, type == "spring", "sw")) %>%
+  dplyr::mutate(wc = replace(wc, type == "winter" & corn == 0, "wwnoc")) %>%
+  dplyr::mutate(wc = replace(wc, type == "winter" & corn == 1, "wwc")) %>%
+  dplyr::mutate(wc = factor(wc, levels = c("sw", "wwnoc", "wwc")))
+
+
+# Subset to the variables that were confirmed in over 2,475 of the Boruta runs:
+load("../Boruta/BorutaResSmall.RData")
+
+Boruta_vars <- 
+  Boruta_res %>%
+  dplyr::select(confirmed_smry) %>%
+  # flatten out the list of tibbles:
+  tidyr::unnest(cols = confirmed_smry) %>%
+  dplyr::group_by(var) %>%
+  dplyr::summarise(total_count = sum(n)) %>%
+  dplyr::filter(total_count >= 2475) %>%
+  dplyr::pull(var)
+```
+
+
+```{r Resamples-Setup, eval=FALSE, echo=FALSE}
+# The response plus the subset of variables moving forward after running Boruta:
+io.s <- 
+  io %>%
+  dplyr::select(Y, all_of(Boruta_vars))
+
+# names(io.s)
+
+set.seed(2331)
+# NOTE: have to hardcode n for the number of bootstrap samples:
+N_BOOT <- 25
+folds <- nested_cv(io.s, 
+                   outside = vfold_cv(v = 10, repeats = 10, strata = Y), 
+                   inside = bootstraps(times = N_BOOT, strata = Y))
+
+# Have a look at the resampling object:
+# folds
+# folds %>% purrr::pluck("inner_resamples", 1)
+# and the first of the bootstrap resamples:
+# folds %>% purrr::pluck("inner_resamples", 1, "splits", 1)
+# which is of class: rsplit
+# folds %>% purrr::pluck("inner_resamples", 1, "splits", 1) %>% class()
+# peek at the data:
+# folds %>% purrr::pluck("inner_resamples", 1, "splits", 1) %>% analysis() %>% head()
+```
+
+
+
+```{r Fitting-Functions, eval=FALSE, echo=FALSE}
+# Here we define a set of functions that will be used to fit the algorithm and RF to the inner and outer resamples.
+
+get_model <- function(object) {
+  # Run the varSelRF algorithm and save a tibble of the variables returned
+  # Args:
+  #  object = an `rsplit` object, in this case the bootstrap samples
+  # Returns:
+  #  A tibble of the variables selected by varSelRF
+  #
+  # The predictor variables:
+  x <- 
+    object %>%
+    analysis() %>%
+    dplyr::select(-Y)
+  
+  # The response (for varSelRF, must be a factor):
+  y <-
+    object %>%
+    analysis() %>%
+    dplyr::pull(Y)
+
+  set.seed(14092)
+  m <- tryCatch(varSelRF(xdata = x, Class = y, ntree = 1000, ntreeIterat = 500, vars.drop.frac = 0.2, 
+                  whole.range = TRUE, keep.forest = FALSE), 
+         error = function(cond) "skip")
+  
+  if(class(m)[1] == "character") {
+    var <- NA
+    } else {
+      var <- m$selected.vars
+      }
+  return(tibble(var))
+  }
+
+
+model_obj <- function(object) {
+  # A wrapper to the `get_model` function. Needed because each inner_resample consists of N_BOOT bootstrap samples.
+  # Args:
+  #  object = an `rsplit` object in `folds$inner_resamples` 
+  # Returns:
+  #  Nothing. This is a wrapper to the `get_model` function
+  purrr::map(object$splits, get_model)
+}
+
+
+get_fmla <- function(object) {
+  # A formula from the selected variables.
+  # Args:
+  #  object = one of the rows of the vars columns
+  # Returns:
+  #  a formula object
+  fmla <- formula(paste("Y~", paste(object %>% dplyr::pull(var), collapse = '+')))
+  return(fmla)
+}
+
+
+fmla_obj <- function(object) {
+  # a wrapper to the `get_fmla` function
+  # Args:
+  #  object = the vars column
+  # Return:
+  #  Nothing. This is a wrapper to `get_fmla`
+  purrr::map(object, get_fmla)
+}
+
+
+# Model specification:
+rf_spec <- rand_forest(trees = 1000) %>%
+  set_mode("classification") %>%
+  set_engine("ranger", seed = 55)
+
+
+get_stats <- function(object, fmla) {
+  # Return the ROC-AUC on the assessment part of the bootstrap resample
+  # Args:
+  #  object = an rsplit object from the inner_resamples column
+  #  fmla = a model formula from the fmla column
+  # Returns:
+  #  the roc_auc for the prediction of the model on the assessment part of the bootstrap split, after being trained on the analysis part of the split
+  #
+  # Set up the workflow:
+  rf_wf <- 
+    workflow() %>%
+    add_formula(fmla) %>%
+    add_model(rf_spec) %>%
+    # Fit the model on the analysis part of the rsplit object:
+    fit(data = analysis(object))
+  
+  # Set up the predictions on the assessment part of the rsplit object:
+  rf_pred <- 
+    # Get the predicted probabilities:
+    predict(rf_wf, assessment(object), type = "prob") %>% 
+    # Add the true outcome data back in:
+    dplyr::bind_cols(assessment(object) %>% select(Y))
+  
+  # Get the roc_auc:
+  rf_pred %>%  
+    roc_auc(truth = Y, .pred_Epi) %>%
+    dplyr::select(.estimate)
+}
+
+stats_obj <- function(object, fmla) {
+  # A wrapper to the `get_stats` function
+  # Args:
+  #  object = an `rsplit` object in `folds$inner_resamples` 
+  # fmla = a model formula from the fmla column
+  # Return:
+  #  Nothing. This is a wrapper which calls `get_stats`
+  purrr::map2(object$splits, fmla, get_stats)
+}
+
+
+get_confirmed_smry <- function(object) {
+  # table the frequency at which variables were selected across the inner_resamples bootstraps
+  # Args:
+  #  object = the vars column
+  # Returns:
+  #  a tibble of the selected variables and how often across the bootstrap resamples 
+  z <- 
+    purrr::map_df(object, bind_rows) %>%
+    dplyr::count(var)
+  return(z)
+}
+```
+
+
+```{r Fit-Models, eval=FALSE, echo=FALSE}
+## What you want to do:
+# For each inner_resamples bootstraps:
+# 1. Run varSelRF on the analysis part of the bootstrap sample
+# 2. Save a tibble of the selected variables
+# 3. Create a formula from the selected variables and fit a RF on the analysis part of the bootstrap sample
+# 4. Predict on the assessment part of the bootstrap sample
+# This will give you estimates of RF model performance using the set of variables selected by the varSelRF algorithm
+
+start <- Sys.time()
+
+varSelRF_res <-
+  folds %>%
+  # Add a column for the selected variables (each row item is a list, corresponding to the number of bootstrap samples):
+  dplyr::mutate(vars = purrr::map(inner_resamples, model_obj)) %>%
+  # Add a column for the formula based on the selected variables:
+  dplyr::mutate(fmla = purrr::map(vars, fmla_obj)) %>%
+  # Add a column for the roc_auc estimated on the assessment part of the bootstrap samples, after training a RF to the set of variables selected on the analysis part of the split:
+  dplyr::mutate(auc = purrr::map2(inner_resamples, fmla, stats_obj)) %>%
+  # Add a column for the summary of the confirmed variables across the bootstrap resamples:
+  dplyr::mutate(confirmed_smry = purrr::map(vars, get_confirmed_smry))
+  # We stop at the above line because don't know how many variables will be returned, or if a particular variable will be returned over all 25 bootstrap samples.
+
+end <- Sys.time()
+difftime(end, start, units = "mins")  # Took 528 min (8.8 hr)
+
+# save(varSelRF_res, file = "varSelRFRes.RData")  # Large file -- 459.8 MB!!
+
+# We most likely don't need the inner_resamples column, they have served their purpose. So create and save a smaller object:
+varSelRF_res_II <-
+  varSelRF_res %>%
+  dplyr::select(-inner_resamples)
+
+# save(varSelRF_res_II, file = "varSelRFResII.RData")
+```
+
+
+```{r Load-Fitted-Models, eval=TRUE, echo=FALSE}
+# This also loads the object m1, defined in the chunk `Outer-samples-create-object`, and which is used in code below
+load("varSelRFResII.RData")
+```
+
+
+# Inner resamples AUCs
+After running the `varSelRF` algorithm on the analysis part of the bootstrap resamples, the variables selected were used to fit a RF model on the analysis data. The fitted model was then used to predict on the assessment part of the data; and it is the AUCs for the predictions on the assessment data that are reported here.
+
+## Histogram
+Rather high, but notice the skew on the left (some models returned a relatively low AUC on the assessment data).
+
+
+```{r Inner-resamples-AUC-Histogram, eval=TRUE, echo=FALSE}
+# Rather high, but notice the skew on the left (some models returned a relatively low AUC on the assessment data).
+varSelRF_res_II %>%
+  dplyr::select(auc) %>%
+  tidyr::unnest(cols = auc) %>%
+  purrr::map_df(., bind_rows) %>%
+  ggplot(., aes(x = .estimate)) +
+  geom_histogram(binwidth = 0.01, fill = "grey80", colour = "black") +
+  theme_bw() +
+  xlab("AUC (bootstrap resamples)") +
+  ylab("Count")
+```
+
+
+## Tabular summary
+
+```{r Inner-resamples-AUC-Table, eval=TRUE, echo=FALSE}
+# A summary of the inner bootstrap AUC's on the assessment part:
+varSelRF_res_II %>%
+  dplyr::select(auc) %>%
+  tidyr::unnest(cols = auc) %>%
+  purrr::map_df(., bind_rows) %>%
+  dplyr::summarise(across(.estimate, list(min = min, max = max, mean = mean, sd = sd, median = median), .names = "{.fn}"))
+```
+
+
+# The number of variables selected per bootstrap resample
+The average number of variables selected per bootstrap resample.
+
+There is a wide range in the number of variables selected per bootstrap sample, all the way from 2 to 77!
+Which is basically from the minimum of 2 that `varSelRF` will fit down to, to the complete set of variables started with!
+
+```{r Number-vars-per-bootstrap-Helper-Functions, eval=TRUE, echo=FALSE}
+# First, need some helper functions...
+get_nvars <- function(object) {
+  # No. of selected variables.
+  # Args:
+  #  object = one of the rows of the vars columns
+  # Returns:
+  #  the no. of vars selected
+  n_vars <- tibble(n = nrow(object))
+  return(n_vars)
+}
+
+nvars_obj <- function(object) {
+  # a wrapper to the `get_nvars` function
+  # Args:
+  #  object = the vars column
+  # Return:
+  #  Nothing. This is a wrapper to `get_nvars`
+  purrr::map(object, get_nvars)
+}
+```
+
+
+## Table
+```{r Number-vars-per-bootstrap-Table, eval=TRUE, echo=FALSE}
+# There is a wide range in the number of variables selected per bootstrap sample, all the way from 2 to 77!
+# Which is basically from the minimum of 2 that varSelRf will fit down to, to the complete set of variables started with (Boruta_vars = 77)!
+  
+# Tabular summary:
+varSelRF_res_II %>%
+  dplyr::select(vars) %>%
+  dplyr::mutate(nvars = purrr::map(vars, nvars_obj)) %>%
+  dplyr::select(nvars) %>%
+  tidyr::unnest(cols = nvars) %>%
+  purrr::map_dfr(., bind_rows) %>%
+  dplyr::summarise(across(n, list(min = min, max = max, mean = mean, sd = sd, median = median), .names = "{.fn}"))
+```
+
+
+## Graphical summary
+```{r Number-vars-per-bootstrap-Graphic, eval=TRUE, echo=FALSE}
+varSelRF_res_II %>%
+  dplyr::select(vars) %>%
+  dplyr::mutate(nvars = purrr::map(vars, nvars_obj)) %>%
+  dplyr::select(nvars) %>%
+  tidyr::unnest(cols = nvars) %>%
+  purrr::map_dfr(., bind_rows) %>%
+  ggplot(., aes(x = n)) +
+  geom_histogram(binwidth = 2, fill = "grey80", colour = "black") +
+  theme_bw() +
+  xlab("No. variables selected") +
+  ylab("No. models")
+```
+
+
+# Variable selection frequency
+The frequency at which variables were selected across all 2500 bootstrap resamples.
+
+In some sense, this could be viewed as a variable importance measure.
+
+```{r Var-Selection-Freq, eval=TRUE, echo=FALSE, fig.height=5.0}
+varSelRF_res_II %>%
+  dplyr::select(confirmed_smry) %>%
+  tidyr::unnest(cols = confirmed_smry) %>%
+  dplyr::group_by(var) %>%
+  dplyr::summarise(total_count = sum(n)) %>%
+  # dplyr::arrange(var) %>%
+  # print(n = Inf) %>%
+  # Perhaps easier to visualize...
+  # This trick updates the factor levels:
+  dplyr::arrange(total_count) %>%
+  dplyr::mutate(var = factor(var, levels = var)) %>%   
+  ggplot(aes(x = var, y = total_count)) +
+  geom_segment(aes(xend = var, yend = 0)) +
+  geom_point(size = 1, colour = "orange") +
+  coord_flip() +
+  theme_bw() +
+  xlab("") +
+  ylab("Frequency") +
+  theme(axis.text.y  = element_text(size = 5),
+        axis.title.x = element_text(size = 12, face = "bold"))
+```
+
+
+So, how do we proceed?  An ad-hoc approach would be to take the _x_ top variables, and use those for a new RF model. But we need a more principled approach.
+
+There could be several competing models. Another way to look at things is to filter by the inner-resamples AUC being above some threshold _x_, and looking at the variables that are in each of those models.
+
+# Inner resamples statistics
+```{r Inner-resample-AUCs-Helper-Functions, eval=TRUE, echo=FALSE}
+# A function to get quantiles. 
+# Taken from https://www.tidyverse.org/blog/2020/03/dplyr-1-0-0-summarise/, where it says that summary expressions can now be tibbles or data frames.
+quibble <- function(x, q = c(0.25, 0.5, 0.75)) {
+  tibble(auc = quantile(x, q), quantile = q)
+}
+```
+
+
+The inner resample AUCs are high. For example, the 95^th^ quantile auc is 0.899.
+
+```{r Inner-resample-AUCs-95th-quantile, eval=TRUE, echo=FALSE}
+# This shows how high the inner-resample auc's are.  For example, the 95th quantile auc is 0.899...
+varSelRF_res_II %>%
+  dplyr::select(auc) %>%
+  tidyr::unnest(cols = auc) %>%
+  purrr::map_df(., bind_rows) %>%
+  dplyr::summarise(quibble(.estimate, c(0.25, 0.5, 0.75, 0.80, 0.90, 0.95))) %>%
+  kable(., row.names = TRUE)
+```
+
+
+...but even at the 95^th^ quantile, this is still a lot of models (128)! Too many.  
+
+```{r Inner-resample-AUCs-95th-quantile-models, eval=TRUE, echo=FALSE}
+# this is still a lot of models (128)!
+varSelRF_res_II %>%
+  dplyr::select(fmla, auc) %>%
+  tidyr::unnest(cols = c(fmla, auc)) %>%
+  tidyr::unnest(cols = auc) %>%
+  dplyr::filter(.estimate >= 0.899) %>%
+  kable(., row.names = TRUE)
+```
+
+
+So, what we can do is pick out the model with the highest auc within each set of 25 bootstrap inner resamples.   
+
+```{r Inner-resample-Highest-AUCs-helper-function, eval=TRUE, echo=FALSE}
+# Define a helper function:
+which_max_auc <- function(object) {
+  # pick out the model with the highest auc in the inner_resamples bootstraps
+  # Args:
+  #  object = the auc column of varSelRF_res or varSelRF_res_II
+  # Returns:
+  #  a tibble of the row and auc for the model with the highest auc among the 25 inner bootstrap resamples
+  object %>%
+    purrr::map_df(., bind_rows) %>%
+    # Will need to know which row the model was in:
+    tibble::rownames_to_column() %>%
+    # In case of ties, slect one model (https://dplyr.tidyverse.org/reference/slice.html):
+    dplyr::slice_max(.estimate, with_ties = FALSE) %>%
+    # Convert rowname from character to numeric:
+    dplyr::mutate(rowname = as.numeric(rowname))
+}
+```
+  
+
+As the outer folds were set up using 10-fold cross-validation repeated 10 times, it means we have 100 sets of 25 bootstrap inner resamples. Therefore, if we pick out the model with the highest AUC (prediction on the assessment part of the inner resamples) from within each of those inner resample sets we end up with 100 models.
+
+The AUCs are high.
+
+```{r Inner-resample-Highest-AUCs-summary-table, eval=TRUE, echo=FALSE}
+# Now we can pull out the top models per 25 bootstrap inner resamples:
+m <-
+  varSelRF_res_II %>%
+  # A tibble of the row (rowname) and auc (.estimate) for the model with the max auc:
+  dplyr::mutate(max.indx = purrr::map(auc, which_max_auc)) %>%
+  # The max auc:
+  dplyr::mutate(max.auc = purrr::map_dbl(max.indx, ~.x %>% dplyr::pull(.estimate))) %>%
+  # The tibble of the variables for the corresponding model:
+  dplyr::mutate(max.vars = purrr::map2(vars, max.indx, ~purrr::pluck(.x, .y$rowname))) %>%
+  # The number of variables in the model:
+  dplyr::mutate(max.no.vars = purrr::map_dbl(max.vars, ~nrow(.x))) %>%
+  # and finally the model formula:
+  dplyr::mutate(max.fmla = purrr::map2(fmla, max.indx, ~purrr::pluck(.x, .y$rowname))) %>%
+  # Select only the columns you need for further steps:
+  dplyr::select(splits, id, id2, starts_with("max"), -max.indx)
+
+
+# Next, look at this subset of inner resample auc's:
+m %>%
+  dplyr::select(max.auc) %>%
+  dplyr::summarise(across(max.auc, list(min = min, max = max, mean = mean, sd = sd, median = median), .names = "{.fn}"))
+```
+
+
+The number of variables per model is shown next. There is a wide range, but on average 14 variables per model, which is much lower than the full set of 77 variables we started with.
+
+Still, it is hard to believe that a model with only 4 predictors could have had a very high AUC (but this is on the inner bootstrap resamples), will have to see if this holds up on the outer resamples.
+
+```{r Inner-resample-Highest-AUCs-num-vars-per-model, eval=TRUE, echo=FALSE}
+# The number of variables per model:
+m %>%
+  dplyr::select(max.no.vars) %>%
+  dplyr::summarise(across(max.no.vars, list(min = min, max = max, mean = mean, sd = sd, median = median), .names = "{.fn}"))
+```
+
+
+Frequency distribution of the number of variables per model. Discrete -- there are only 12 categories. If we had to select, perhaps go for the consensus (middle of the distribution) rather than the tails (models with very few or many variables).
+
+```{r Inner-resample-Highest-AUCs-num-vars-per-model-distr, eval=TRUE, echo=FALSE}
+m %>%
+  dplyr::select(max.no.vars) %>%
+  ggplot(., aes(x = max.no.vars)) +
+  geom_histogram(binwidth = 1, fill = "grey80", colour = "black") +
+  theme_bw() +
+  xlab("No. variables per model") +
+  ylab("No. models")
+```
+
+
+Look at the mean AUC and std dev AUC for the models grouped by the number of variables.  
+
+```{r Inner-resample-Highest-AUCs-num-vars-per-model-stats, eval=TRUE, echo=FALSE}
+m %>%
+  dplyr::select(max.no.vars, max.auc) %>%
+  dplyr::group_by(max.no.vars) %>%
+  dplyr::summarise(no.models = n(), mean.auc = mean(max.auc), sd.auc = sd(max.auc)) %>%
+  kable(., row.names = TRUE)
+```
+
+
+The frequency at which variables were selected among these 100 models. There are 56 variables. Again, some appear quite frequently, others just a few times.
+
+```{r Inner-resample-Highest-AUCs-var-selection-freq, eval=TRUE, echo=FALSE, fig.height=5.0}
+# The frequency at which variables were selected (now we have 100 models).
+m %>%
+  dplyr::select(max.vars) %>%
+  tidyr::unnest(cols = max.vars) %>%
+  dplyr::count(var) %>%  # there are 56 variables
+  # This trick updates the factor levels:
+  dplyr::arrange(n) %>%
+  dplyr::mutate(var = factor(var, levels = var)) %>%   
+  ggplot(aes(x = var, y = n)) +
+  geom_segment(aes(xend = var, yend = 0)) +
+  geom_point(size = 1, colour = "orange") +
+  coord_flip() +
+  theme_bw() +
+  xlab("") +
+  ylab("Frequency") +
+  theme(axis.text.y  = element_text(size = 5),
+        axis.title.x = element_text(size = 12, face = "bold"))
+```
+
+
+> Data science provides solutions to problems by using probabilistic and machine learning algorithms. Often, multiple solutions to a problem are provided and a degree of confidence is associated with each solution.
+
+The above quote is from an [interview with C.R. Rao](https://magazine.amstat.org/blog/2016/12/01/raointerview/). The multiplicity of solutions.
+
+We can ask how many of these 100 models were unique. In fact, there was only one duplicate, as shown by the output below. 
+
+```{r Inner-resample-Highest-AUCs-check-for-duplicates, eval=TRUE, echo=TRUE}
+m %>%
+  dplyr::mutate(fmla2 = purrr::map(max.vars, function(.maxvars) {zee <- .maxvars %>%
+    dplyr::pull(var) %>% sort(); return(paste(zee, collapse = " + ")) })) %>%
+  dplyr::select(fmla2) %>%
+  tidyr::unnest(cols = fmla2) %>%
+  dplyr::distinct() %>%
+  nrow()
+```
+
+
+Identify the duplicated models. Their inner resample AUCs are close.
+
+```{r Inner-resample-Highest-AUCs-duplicated-models, eval=TRUE, echo=TRUE}
+m1 %>%
+  dplyr::mutate(fmla2 = purrr::map(max.vars, function(.maxvars) {zee <- .maxvars %>%
+    dplyr::pull(var) %>% sort(); return(paste(zee, collapse = " + ")) })) %>%
+  dplyr::select(fmla2, max.auc) %>%
+  tidyr::unnest(cols = fmla2) %>%
+  tibble::rownames_to_column() %>%
+  dplyr::group_by(fmla2) %>% 
+  dplyr::filter(n() > 1) %>%
+  kable(., row.names = TRUE, col.names = c("ID", "Model", "Inner AUC"))
+```
+
+
+
+List the 100 models, sorted by AUC.
+
+5^th^ on the list is one of the models with only 4 predictors. Too good to be true?
+
+```{r Inner-resample-Highest-AUCs-list-the-models, eval=TRUE, echo=TRUE}
+m %>%
+  dplyr::select(max.fmla, max.no.vars, max.auc) %>%
+  tibble::rownames_to_column() %>%
+  dplyr::arrange(desc(max.auc)) %>%
+  kable(., row.names = TRUE, col.names = c("ID", "Model", "No. of vars", "Inner AUC"))
+```
+
+
+# Outer resample performance
+Use the model formulas to fit a RF to the analysis part of the outer (cross-validation) splits, and predict on the assessment part. Use the default RF settings, no tuning. 
+
+That is, we have used the inner resamples for selecting models. Once we have those, we examine their performance on a part of the data the models have not seen. We use AUC as the measure of predictive performance.
+
+```{r Outer-samples-create-object, eval=FALSE, echo=FALSE}
+# Use the model formulas to fit a RF to the analysis part of splits, and predict on the assessment part. Use the default RF settings, no tuning.
+m1 <- 
+  m %>%
+  dplyr::mutate(auc.outer = purrr::map2(splits, max.fmla, get_stats))
+
+# Didn't take too long, but add the m1 object to the existing varSelRFResII.RData object which already holds varSelRF_res_II: 
+# save(varSelRF_res_II, m1, file = "varSelRFResII.RData")
+```
+
+## Histogram
+We see there is a range, and a few models have not done very well.
+
+```{r Outer-AUC-Histogram, eval=TRUE, echo=FALSE}
+# A histogram of the roc_auc from the fits of the models on the outer analysis splits and their predictions on the assessment part of the splits:
+m1 %>%
+  dplyr::select(auc.outer) %>%
+  tidyr::unnest(cols = auc.outer) %>%
+  ggplot(., aes(x = .estimate)) +
+  geom_histogram(binwidth = 0.01, fill = "grey80", colour = "black") +
+  theme_bw() +
+  xlab("AUC (outer resamples")
+```
+
+
+## Table
+```{r Outer-AUC-Table, eval=TRUE, echo=FALSE}
+# Tabular summary of the roc_auc values:
+m1 %>%
+  dplyr::select(auc.outer) %>%
+  tidyr::unnest(cols = auc.outer) %>%
+  dplyr::summarise(across(.estimate, list(min = min, max = max, mean = mean, sd = sd, median = median), .names = "{.fn}"))
+```
+
+
+## Stats
+```{r Outer-AUC-stats, eval=TRUE, echo=FALSE}
+m1 %>%
+  dplyr::select(max.no.vars, auc.outer) %>%
+  tidyr::unnest(cols = auc.outer) %>%
+  dplyr::group_by(max.no.vars) %>%
+  dplyr::summarise(no.models = n(), mean.auc = mean(.estimate), sd.auc = sd(.estimate))
+```
+
+
+## List of models
+Here we list the models (including the two duplicates) sorted by outer AUC.  At the top of the list, it seems the outer AUCs were better than the inner resample AUCs, whereas at the bottom of the list the inner resample AUCs were over-optimistic.
+
+```{r Outer-Model-List, eval=TRUE, echo=FALSE}
+m1 %>%
+  dplyr::select(max.fmla, max.no.vars, max.auc, auc.outer) %>%
+  tidyr::unnest(cols = auc.outer) %>%
+  tibble::rownames_to_column() %>%
+  dplyr::arrange(desc(.estimate)) %>%
+  kable(., row.names = TRUE, col.names = c("ID", "Model", "No. of vars", "Inner AUC", "Outer AUC"))
+```
+
+
+## The duplicates
+How about those two duplicated models?  Recall these are fit on different outer resample folds. In the 2^nd^ case, the outer AUC is far lower than the inner AUC. Same model! This does hint at possible model instability (or high variance), and is something to be aware of as we proceed.
+
+```{r Outer-Model-Duplicates, eval=TRUE, echo=FALSE}
+# How about those two models that are duplicates?
+m1 %>%
+  dplyr::select(max.vars, max.no.vars, max.auc, auc.outer) %>%
+  dplyr::mutate(fmla = purrr::map(max.vars, function(.maxvars) {zee <- .maxvars %>%
+    dplyr::pull(var) %>% sort(); return(paste(zee, collapse = " + ")) })) %>%
+  dplyr::select(-max.vars) %>%
+  tidyr::unnest(cols = c(auc.outer, fmla)) %>%
+  tibble::rownames_to_column() %>%
+  dplyr::group_by(fmla) %>% 
+  dplyr::filter(n() > 1) %>% # look at the outer auc -- there is a large discrepancy between the two (instability??)
+  # Just arranging the order of the columns:
+  dplyr::select(rowname, fmla, max.no.vars, max.auc, .estimate) %>%
+  kable(., row.names = TRUE, col.names = c("ID", "Model", "No. of vars", "Inner AUC", "Outer AUC"))
+```
+
+
+## Some filtering
+Target models with an outer AUC >= 0.92, with between 9 and 14 variables.
+This gives us a (manageable) set of 20 models.
+
+```{r Outer-Model-Filter, eval=TRUE, echo=FALSE}
+m1 %>%
+  dplyr::select(max.no.vars, max.fmla, auc.outer) %>%
+  tidyr::unnest(cols = auc.outer) %>%
+  tibble::rownames_to_column() %>%
+  dplyr::filter(.estimate >= 0.92, max.no.vars >= 9, max.no.vars <= 14) %>%  # 20 models
+  # NOTE: knitting complained about the next line, so I used the code defining the function as.character in the formula.tools package
+  # dplyr::mutate(fmla2 = purrr::map_chr(max.fmla, as.character)) %>%
+  dplyr::mutate(fmla2 = purrr::map_chr(max.fmla, function(x) {Reduce(paste, deparse(x))})) %>%
+  dplyr::mutate(fmla2 = purrr::map_chr(fmla2, ~str_remove(.x, "Y ~ "))) %>%
+  dplyr::select(-max.fmla) %>%
+  kable(., row.names = TRUE, col.names = c("ID", "No. of vars", "Outer AUC", "Model")) 
+```
+
+
+
+# Computational environment
+```{r SessionInfo, eval=TRUE, echo=FALSE, results='markup'}
+R.Version()$version.string
+R.Version()$system
+sessionInfo()
+```

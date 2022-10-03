@@ -1,0 +1,329 @@
+counter,source,variable_type,variable_name,summary,period,type,metric,time_step,day,win_start_day,win_start_period,win_end_day,win_end_period,win_length
+1,Shah 2019,T.A,T.A.1,Daily mean T,pre,T,mean,daily,24h,25,pre,15,pre,10
+2,Shah 2019,T.A,T.A.2,Daily mean T,pre,T,mean,daily,24h,20,pre,10,pre,10
+3,Shah 2019,T.A,T.A.3,Daily mean T,pre,T,mean,daily,24h,40,pre,30,pre,10
+4,Shah 2019,T.A,T.A.4,Daily mean T,post,T,mean,daily,24h,0,anthesis,10,post,10
+5,Shah 2019,T.A,T.A.5,Daily mean T,post,T,mean,daily,24h,0,anthesis,20,post,20
+6,Shah 2019,D.A,D.A.1,Daily mean D,pre,D,mean,daily,24h,20,pre,0,anthesis,20
+7,Shah 2019,D.A,D.A.2,Daily mean D,pre,D,mean,daily,24h,20,pre,10,pre,10
+8,Shah 2019,D.A,D.A.3,Daily mean D,pre,D,mean,daily,24h,40,pre,25,pre,15
+9,Shah 2019,P.A,P.A.1,Daily mean P,pre,P,mean,daily,24h,40,pre,20,pre,20
+10,Shah 2019,P.A,P.A.2,Daily mean P,pre,P,mean,daily,24h,45,pre,35,pre,10
+11,Shah 2019,P.A,P.A.3,Daily mean P,pre,P,mean,daily,24h,60,pre,50,pre,10
+12,Shah 2019,P.A,P.A.4,Daily mean P,pre,P,mean,daily,24h,80,pre,70,pre,10
+13,Shah 2019,P.A,P.A.5,Daily mean P,pre,P,mean,daily,24h,100,pre,60,pre,40
+14,Shah 2019,RH.A,RH.A.1,Daily mean RH,pre,RH,mean,daily,24h,20,pre,0,anthesis,20
+16,Shah 2019,RH.A,RH.A.3,Daily mean RH,pre-post,RH,mean,daily,24h,10,pre,10,post,20
+17,Shah 2019,VPD.A,VPD.A.1,Daily mean VPD,pre,VPD,mean,daily,24h,10,pre,0,anthesis,10
+18,Shah 2019,VPD.A,VPD.A.2,Daily mean VPD,pre,VPD,mean,daily,24h,20,pre,0,anthesis,20
+19,Shah 2019,VPD.A,VPD.A.3,Daily mean VPD,post,VPD,mean,daily,24h,0,anthesis,15,post,15
+20,Shah 2019,VPD.A,VPD.A.4,Daily mean VPD,post,VPD,mean,daily,24h,0,anthesis,20,post,20
+21,Shah 2019,VPD.A,VPD.A.5,Daily mean VPD,pre-post,VPD,mean,daily,24h,10,pre,10,post,20
+22,Shah 2019,TDD.A,TDD.A.1,Daily mean TDD,pre,TDD,mean,daily,24h,20,pre,0,anthesis,20
+23,Shah 2019,TDD.A,TDD.A.2,Daily mean TDD,pre,TDD,mean,daily,24h,30,pre,0,anthesis,30
+24,Shah 2019,TDD.A,TDD.A.3,Daily mean TDD,post,TDD,mean,daily,24h,0,anthesis,10,post,10
+25,Shah 2019,TDD.A,TDD.A.4,Daily mean TDD,post,TDD,mean,daily,24h,0,anthesis,20,post,20
+26,Shah 2019,TDD.A,TDD.A.5,Daily mean TDD,pre-post,TDD,mean,daily,24h,10,pre,5,post,15
+27,Shah 2019,TDD.A,TDD.A.6,Daily mean TDD,pre-post,TDD,mean,daily,24h,10,pre,10,post,20
+28,Shah 2019,RH.G80.CHD,RH.G80.CHD.1,No. hr RH >= 80,pre,RH,count,hourly,24h,20,pre,0,anthesis,20
+29,Shah 2019,RH.G80.CHD,RH.G80.CHD.2,No. hr RH >= 80,post,RH,count,hourly,24h,0,anthesis,10,post,10
+30,Shah 2019,RH.G80.CHD,RH.G80.CHD.3,No. hr RH >= 80,pre-post,RH,count,hourly,24h,20,pre,10,post,30
+31,Shah 2019,RH.G90.CHD,RH.G90.CHD.1,No. hr RH >= 90,pre,RH,count,hourly,24h,20,pre,0,anthesis,20
+32,Shah 2019,RH.G90.CHD,RH.G90.CHD.2,No. hr RH >= 90,post,RH,count,hourly,24h,0,anthesis,10,post,10
+33,Shah 2019,RH.G90.CHD,RH.G90.CHD.3,No. hr RH >= 90,pre-post,RH,count,hourly,24h,50,pre,10,post,60
+34,Shah 2019,T.G30.CHD,T.G30.CHD.1,No. hr T > 30,pre,T,count,hourly,24h,20,pre,0,anthesis,20
+35,Shah 2019,T.G30.CHD,T.G30.CHD.2,No. hr T > 30,pre,T,count,hourly,24h,60,pre,40,pre,20
+36,Shah 2019,T.G30.CHD,T.G30.CHD.3,No. hr T > 30,post,T,count,hourly,24h,10,post,20,post,10
+37,Shah 2019,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.CHD.1,No. hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,30,pre,0,anthesis,30
+38,Shah 2019,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.CHD.2,No. hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,60,pre,40,pre,20
+39,Shah 2019,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.CHD.3,No. hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,10,post,10
+40,Shah 2019,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.CHD.1,No. hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,30,pre,0,anthesis,30
+41,Shah 2019,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.CHD.2,No. hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,60,pre,40,pre,20
+42,Shah 2019,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.CHD.3,No. hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,10,post,10
+43,Shah 2019,TRH.20T25nRHG85.CHD,TRH.20T25nRHG85.CHD.1,No. hr 20 <= T <= 25 & RH >= 85,post,TRH,count,hourly,24h,0,anthesis,10,post,10
+44,Shah 2019,TRH.5T30nRHG75.CHD,TRH.5T30nRHG75.CHD.1,No. hr 5 <= T <= 30 & RH >= 75,pre,TRH,count,hourly,24h,20,pre,0,anthesis,20
+45,Shah 2019,TRH.5T30nRHG75.CHD,TRH.5T30nRHG75.CHD.2,No. hr 5 <= T <= 30 & RH >= 75,pre,TRH,count,hourly,24h,40,pre,0,anthesis,40
+46,Shah 2019,TRH.5T30nRHG75.CHD,TRH.5T30nRHG75.CHD.3,No. hr 5 <= T <= 30 & RH >= 75,post,TRH,count,hourly,24h,0,anthesis,10,post,10
+47,Shah 2019,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.CHD.1,No. hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,30,pre,0,anthesis,30
+48,Shah 2019,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.CHD.2,No. hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,50,pre,0,anthesis,50
+49,Shah 2019,VPD.L11.CHD,VPD.L11.CHD.1,No. hr VPD <= 1.1,pre,VPD,count,hourly,24h,15,pre,5,pre,10
+50,Shah 2019,VPD.L11.CHD,VPD.L11.CHD.2,No. hr VPD <= 1.1,pre,VPD,count,hourly,24h,40,pre,0,anthesis,40
+51,Shah 2019,VPD.L635.CHD,VPD.L635.CHD.1,No. hr VPD <= 0.635,pre,VPD,count,hourly,24h,15,pre,5,pre,10
+52,Shah 2019,VPD.L635.CHD,VPD.L635.CHD.2,No. hr VPD <= 0.635,pre-post,VPD,count,hourly,24h,40,pre,10,post,50
+53,Shah 2019,RH.G70.CD,RH.G70.CD.1,No. days mean RH > 70,pre,RH,count,daily,24h,40,pre,10,pre,30
+54,Shah 2019,RH.G70.CD,RH.G70.CD.2,No. days mean RH > 70,post,RH,count,daily,24h,0,anthesis,10,post,10
+55,Shah 2019,RH.G70.CD,RH.G70.CD.3,No. days mean RH > 70,pre-post,RH,count,daily,24h,15,pre,10,post,25
+56,Shah 2019,T.14T22.CD,T.14T22.CD.1,No. days 14 < mean T < 22,pre,T,count,daily,24h,70,pre,0,anthesis,70
+57,Shah 2019,T.14T22.CD,T.14T22.CD.2,No. days 14 < mean T < 22,pre,T,count,daily,24h,60,pre,40,pre,20
+58,Shah 2019,VPD.L6.CD,VPD.L6.CD.1,No. days mean VPD < 0.6,pre,VPD,count,daily,24h,20,pre,0,anthesis,20
+59,Shah 2019,VPD.L6.CD,VPD.L6.CD.2,No. days mean VPD < 0.6,pre,VPD,count,daily,24h,40,pre,0,anthesis,40
+60,Shah 2019,VPD.L6.CD,VPD.L6.CD.3,No. days mean VPD < 0.6,post,VPD,count,daily,24h,0,anthesis,20,post,20
+61,Shah 2019,T.MINMAXDIFF,T.MINMAXDIFF.1,Max - min daily T,pre,T,mean,daily,24h,20,pre,0,anthesis,20
+62,Shah 2019,T.MINMAXDIFF,T.MINMAXDIFF.2,Max - min daily T,pre-post,T,mean,daily,24h,20,pre,10,post,30
+63,Shah 2019,RH.MINMAXDIFF,RH.MINMAXDIFF.1,Max - min daily RH,pre,RH,mean,daily,24h,20,pre,10,pre,10
+64,Shah 2019,RH.MINMAXDIFF,RH.MINMAXDIFF.2,Max - min daily RH,pre,RH,mean,daily,24h,30,pre,0,anthesis,30
+65,Shah 2019,RH.MINMAXDIFF,RH.MINMAXDIFF.3,Max - min daily RH,pre-post,RH,mean,daily,24h,30,pre,10,post,40
+66,Shah 2019,P.MINMAXDIFF,P.MINMAXDIFF.1,Max - min daily P,pre,P,mean,daily,24h,60,pre,50,pre,10
+67,Shah 2019,D.MINMAXDIFF,D.MINMAXDIFF.1,Max - min daily D,pre,D,mean,daily,24h,30,pre,0,anthesis,30
+68,Shah 2019,D.MINMAXDIFF,D.MINMAXDIFF.2,Max - min daily D,pre,D,mean,daily,24h,40,pre,5,pre,35
+69,Shah 2019,D.MINMAXDIFF,D.MINMAXDIFF.3,Max - min daily D,pre-post,D,mean,daily,24h,20,pre,10,post,30
+70,Shah 2019,VPD.MINMAXDIFF,VPD.MINMAXDIFF.1,Max - min daily VPD,pre,VPD,mean,daily,24h,10,pre,0,anthesis,10
+71,Shah 2019,VPD.MINMAXDIFF,VPD.MINMAXDIFF.2,Max - min daily VPD,pre,VPD,mean,daily,24h,40,pre,0,anthesis,40
+72,Shah 2019,VPD.MINMAXDIFF,VPD.MINMAXDIFF.3,Max - min daily VPD,pre-post,VPD,mean,daily,24h,10,pre,10,post,20
+73,Shah 2019,TDD.MINMAXDIFF,TDD.MINMAXDIFF.1,Max - min daily TDD,pre,TDD,mean,daily,24h,30,pre,0,anthesis,30
+74,Shah 2019,TDD.MINMAXDIFF,TDD.MINMAXDIFF.2,Max - min daily TDD,pre,TDD,mean,daily,24h,40,pre,0,anthesis,40
+75,Shah 2019,TDD.MINMAXDIFF,TDD.MINMAXDIFF.3,Max - min daily TDD,pre-post,TDD,mean,daily,24h,30,pre,10,post,40
+76,Shah 2019,T.SD,T.SD.1,Mean(per day sd(hourly T)),pre,T,mean,daily,24h,20,pre,0,anthesis,20
+77,Shah 2019,T.SD,T.SD.2,Mean(per day sd(hourly T)),post,T,mean,daily,24h,0,anthesis,10,post,10
+78,Shah 2019,T.SD,T.SD.3,Mean(per day sd(hourly T)),pre-post,T,mean,daily,24h,20,pre,10,post,30
+79,Shah 2019,D.SD,D.SD.1,Mean(per day sd(hourly D)),pre,D,mean,daily,24h,30,pre,0,anthesis,30
+80,Shah 2019,D.SD,D.SD.2,Mean(per day sd(hourly D)),pre,D,mean,daily,24h,40,pre,10,pre,30
+81,Shah 2019,D.SD,D.SD.3,Mean(per day sd(hourly D)),pre-post,D,mean,daily,24h,40,pre,10,post,50
+82,Shah 2019,P.SD,P.SD.1,Mean(per day sd(hourly P)),pre,P,mean,daily,24h,60,pre,50,pre,10
+83,Shah 2019,VPD.SD,VPD.SD.1,Mean(per day sd(hourly VPD)),pre,VPD,mean,daily,24h,10,pre,0,anthesis,10
+84,Shah 2019,VPD.SD,VPD.SD.2,Mean(per day sd(hourly VPD)),pre,VPD,mean,daily,24h,40,pre,0,anthesis,40
+85,Shah 2019,VPD.SD,VPD.SD.3,Mean(per day sd(hourly VPD)),post,VPD,mean,daily,24h,0,anthesis,10,post,10
+86,Shah 2019,VPD.SD,VPD.SD.4,Mean(per day sd(hourly VPD)),pre-post,VPD,mean,daily,24h,10,pre,10,post,20
+87,Shah 2019,RH.SD,RH.SD.1,Mean(per day sd(hourly RH)),pre,RH,mean,daily,24h,20,pre,0,anthesis,20
+88,Shah 2019,RH.SD,RH.SD.2,Mean(per day sd(hourly RH)),pre,RH,mean,daily,24h,20,pre,10,pre,10
+89,Shah 2019,TDD.SD,TDD.SD.1,Mean(per day sd(hourly TDD)),pre,TDD,mean,daily,24h,30,pre,0,anthesis,30
+90,Shah 2019,TDD.SD,TDD.SD.2,Mean(per day sd(hourly TDD)),pre,TDD,mean,daily,24h,40,pre,0,anthesis,40
+91,Shah 2019,TDD.SD,TDD.SD.3,Mean(per day sd(hourly TDD)),post,TDD,mean,daily,24h,0,anthesis,10,post,10
+92,Shah 2019,TDD.SD,TDD.SD.4,Mean(per day sd(hourly TDD)),pre-post,TDD,mean,daily,24h,20,pre,10,post,30
+93,DeWolf 2003,T.MIN,MT7,Daily minimum: T,pre,T,mean,daily,24h,7,pre,0,anthesis,7
+94,DeWolf 2003,T.G15.CHD,T157,No. hr T >= 15,pre,T,count,hourly,24h,7,pre,0,anthesis,7
+95,DeWolf 2003,T.15T30.CHD,T15307,No. hr 15 <= T <= 30,pre,T,count,hourly,24h,7,pre,0,anthesis,7
+96,DeWolf 2003,RH.A,RH7,Daily mean RH,pre,RH,mean,daily,24h,7,pre,0,anthesis,7
+97,DeWolf 2003,RH.G90.CHD,RH907,No. hr RH >= 90,pre,RH,count,hourly,24h,7,pre,0,anthesis,7
+98,DeWolf 2003,TRH.15T30nRHG90.CHD,TRH907,No. hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,7,pre,0,anthesis,7
+99,DeWolf 2003,TRH.15T30nRHG80.CHD,TRH807,No. hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,7,pre,0,anthesis,7
+100,DeWolf 2003,T.MIN,MT10,Daily minimum: T,post,T,mean,daily,24h,0,anthesis,10,post,10
+101,DeWolf 2003,T.G15.CHD,T1510,No. hr T >= 15,post,T,count,hourly,24h,0,anthesis,10,post,10
+102,DeWolf 2003,T.15T30.CHD,T153010,No. hr 15 <= T <= 30,post,T,count,hourly,24h,0,anthesis,10,post,10
+103,DeWolf 2003,RH.A,RH10,Daily mean RH,post,RH,mean,daily,24h,0,anthesis,10,post,10
+104,DeWolf 2003,RH.G90.CHD,RH9010,No. hr RH >= 90,post,RH,count,hourly,24h,0,anthesis,10,post,10
+105,DeWolf 2003,RH.G80.CHD,RH8010,No. hr RH >= 80,post,RH,count,hourly,24h,0,anthesis,10,post,10
+106,DeWolf 2003,TRH.15T30nRHG90.CHD,TRH9010,No. hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,10,post,10
+107,DeWolf 2003,TRH.15T30nRHG80.CHD,TRH8010,No. hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,10,post,10
+108,DeWolf 2003,INT.CHD,INT3,T15307 × TRH9010,pre-post,TRH,count,hourly,24h,7,pre,10,post,17
+109,Shah 2013,VPD.AN,VPD.A.PRE5.12H,Mean VPD overnight,pre,VPD,mean,daily,12h,5,pre,0,anthesis,5
+110,Shah 2013,VPD.L20.CHN,VPD.L20.PRE5.12H,No. overnight hr VPD <= 0.20,pre,VPD,count,hourly,12h,5,pre,0,anthesis,5
+111,Shah 2013,VPD.L45.CHN,VPD.L45.PRE5.12H,No. overnight hr VPD <= 0.45,pre,VPD,count,hourly,12h,5,pre,0,anthesis,5
+112,Shah 2013,VPD.AN,VPD.A.PRE7.12H,Mean VPD overnight,pre,VPD,mean,daily,12h,7,pre,0,anthesis,7
+113,Shah 2013,VPD.L20.CHN,VPD.L20.PRE7.12H,No. overnight hr VPD <= 0.20,pre,VPD,count,hourly,12h,7,pre,0,anthesis,7
+114,Shah 2013,VPD.L45.CHN,VPD.L45.PRE7.12H,No. overnight hr VPD <= 0.45,pre,VPD,count,hourly,12h,7,pre,0,anthesis,7
+115,Shah 2013,VPD.AN,VPD.A.PRE10.12H,Mean VPD overnight,pre,VPD,mean,daily,12h,10,pre,0,anthesis,10
+116,Shah 2013,VPD.L20.CHN,VPD.L20.PRE10.12H,No. overnight hr VPD <= 0.20,pre,VPD,count,hourly,12h,10,pre,0,anthesis,10
+117,Shah 2013,VPD.L45.CHN,VPD.L45.PRE10.12H,No. overnight hr VPD <= 0.45,pre,VPD,count,hourly,12h,10,pre,0,anthesis,10
+118,Shah 2013,VPD.AN,VPD.A.PRE14.12H,Mean VPD overnight,pre,VPD,mean,daily,12h,14,pre,0,anthesis,14
+119,Shah 2013,VPD.L20.CHN,VPD.L20.PRE14.12H,No. overnight hr VPD <= 0.20,pre,VPD,count,hourly,12h,14,pre,0,anthesis,14
+120,Shah 2013,VPD.L45.CHN,VPD.L45.PRE14.12H,No. overnight hr VPD <= 0.45,pre,VPD,count,hourly,12h,14,pre,0,anthesis,14
+121,Shah 2013,VPD.AN,VPD.A.PRE15.12H,Mean VPD overnight,pre,VPD,mean,daily,12h,15,pre,0,anthesis,15
+122,Shah 2013,VPD.L20.CHN,VPD.L20.PRE15.12H,No. overnight hr VPD <= 0.20,pre,VPD,count,hourly,12h,15,pre,0,anthesis,15
+123,Shah 2013,VPD.L45.CHN,VPD.L45.PRE15.12H,No. overnight hr VPD <= 0.45,pre,VPD,count,hourly,12h,15,pre,0,anthesis,15
+124,Shah 2013,VPD.AN,VPD.A.POST5.12H,Mean VPD overnight,post,VPD,mean,daily,12h,0,anthesis,5,post,5
+125,Shah 2013,VPD.L20.CHN,VPD.L20.POST5.12H,No. overnight hr VPD <= 0.20,post,VPD,count,hourly,12h,0,anthesis,5,post,5
+126,Shah 2013,VPD.L45.CHN,VPD.L45.POST5.12H,No. overnight hr VPD <= 0.45,post,VPD,count,hourly,12h,0,anthesis,5,post,5
+127,Shah 2013,VPD.AN,VPD.A.POST7.12H,Mean VPD overnight,post,VPD,mean,daily,12h,0,anthesis,7,post,7
+128,Shah 2013,VPD.L20.CHN,VPD.L20.POST7.12H,No. overnight hr VPD <= 0.20,post,VPD,count,hourly,12h,0,anthesis,7,post,7
+129,Shah 2013,VPD.L45.CHN,VPD.L45.POST7.12H,No. overnight hr VPD <= 0.45,post,VPD,count,hourly,12h,0,anthesis,7,post,7
+130,Shah 2013,VPD.AN,VPD.A.POST10.12H,Mean VPD overnight,post,VPD,mean,daily,12h,0,anthesis,10,post,10
+131,Shah 2013,VPD.L20.CHN,VPD.L20.POST10.12H,No. overnight hr VPD <= 0.20,post,VPD,count,hourly,12h,0,anthesis,10,post,10
+132,Shah 2013,VPD.L45.CHN,VPD.L45.POST10.12H,No. overnight hr VPD <= 0.45,post,VPD,count,hourly,12h,0,anthesis,10,post,10
+133,Shah 2013,VPD.AN,VPD.A.POST14.12H,Mean VPD overnight,post,VPD,mean,daily,12h,0,anthesis,14,post,14
+134,Shah 2013,VPD.L20.CHN,VPD.L20.POST14.12H,No. overnight hr VPD <= 0.20,post,VPD,count,hourly,12h,0,anthesis,14,post,14
+135,Shah 2013,VPD.L45.CHN,VPD.L45.POST14.12H,No. overnight hr VPD <= 0.45,post,VPD,count,hourly,12h,0,anthesis,14,post,14
+136,Shah 2013,VPD.AN,VPD.A.POST15.12H,Mean VPD overnight,post,VPD,mean,daily,12h,0,anthesis,15,post,15
+137,Shah 2013,VPD.L20.CHN,VPD.L20.POST15.12H,No. overnight hr VPD <= 0.20,post,VPD,count,hourly,12h,0,anthesis,15,post,15
+138,Shah 2013,VPD.L45.CHN,VPD.L45.POST15.12H,No. overnight hr VPD <= 0.45,post,VPD,count,hourly,12h,0,anthesis,15,post,15
+139,Shah 2013,TDD.AN,DD.A.PRE5.12H,Mean TDD overnight,pre,TDD,mean,daily,12h,5,pre,0,anthesis,5
+140,Shah 2013,TDD.L1.CHN,DD.L1.PRE5.12H,No. overnight hr TDD < 1.0,pre,TDD,count,hourly,12h,5,pre,0,anthesis,5
+141,Shah 2013,TDD.AN,DD.A.PRE7.12H,Mean TDD overnight,pre,TDD,mean,daily,12h,7,pre,0,anthesis,7
+142,Shah 2013,TDD.L1.CHN,DD.L1.PRE7.12H,No. overnight hr TDD < 1.0,pre,TDD,count,hourly,12h,7,pre,0,anthesis,7
+143,Shah 2013,TDD.AN,DD.A.PRE10.12H,Mean TDD overnight,pre,TDD,mean,daily,12h,10,pre,0,anthesis,10
+144,Shah 2013,TDD.L1.CHN,DD.L1.PRE10.12H,No. overnight hr TDD < 1.0,pre,TDD,count,hourly,12h,10,pre,0,anthesis,10
+145,Shah 2013,TDD.AN,DD.A.PRE14.12H,Mean TDD overnight,pre,TDD,mean,daily,12h,14,pre,0,anthesis,14
+146,Shah 2013,TDD.L1.CHN,DD.L1.PRE14.12H,No. overnight hr TDD < 1.0,pre,TDD,count,hourly,12h,14,pre,0,anthesis,14
+147,Shah 2013,TDD.AN,DD.A.PRE15.12H,Mean TDD overnight,pre,TDD,mean,daily,12h,15,pre,0,anthesis,15
+148,Shah 2013,TDD.L1.CHN,DD.L1.PRE15.12H,No. overnight hr TDD < 1.0,pre,TDD,count,hourly,12h,15,pre,0,anthesis,15
+149,Shah 2013,TDD.AN,DD.A.POST5.12H,Mean TDD overnight,post,TDD,mean,daily,12h,0,anthesis,5,post,5
+150,Shah 2013,TDD.L1.CHN,DD.L1.POST5.12H,No. overnight hr TDD < 1.0,post,TDD,count,hourly,12h,0,anthesis,5,post,5
+151,Shah 2013,TDD.AN,DD.A.POST7.12H,Mean TDD overnight,post,TDD,mean,daily,12h,0,anthesis,7,post,7
+152,Shah 2013,TDD.L1.CHN,DD.L1.POST7.12H,No. overnight hr TDD < 1.0,post,TDD,count,hourly,12h,0,anthesis,7,post,7
+153,Shah 2013,TDD.AN,DD.A.POST10.12H,Mean TDD overnight,post,TDD,mean,daily,12h,0,anthesis,10,post,10
+154,Shah 2013,TDD.L1.CHN,DD.L1.POST10.12H,No. overnight hr TDD < 1.0,post,TDD,count,hourly,12h,0,anthesis,10,post,10
+155,Shah 2013,TDD.AN,DD.A.POST14.12H,Mean TDD overnight,post,TDD,mean,daily,12h,0,anthesis,14,post,14
+156,Shah 2013,TDD.L1.CHN,DD.L1.POST14.12H,No. overnight hr TDD < 1.0,post,TDD,count,hourly,12h,0,anthesis,14,post,14
+157,Shah 2013,TDD.AN,DD.A.POST15.12H,Mean TDD overnight,post,TDD,mean,daily,12h,0,anthesis,15,post,15
+158,Shah 2013,TDD.L1.CHN,DD.L1.POST15.12H,No. overnight hr TDD < 1.0,post,TDD,count,hourly,12h,0,anthesis,15,post,15
+159,Shah 2013,RH.AN,RH.A.PRE5.12H,Mean RH overnight,pre,RH,mean,daily,12h,5,pre,0,anthesis,5
+160,Shah 2013,RH.A,RH.A.PRE5.24H,Daily mean RH,pre,RH,mean,daily,24h,5,pre,0,anthesis,5
+161,Shah 2013,RH.G80.CHN,RH.G80.PRE5.12H,No. overnight hr RH >= 80,pre,RH,count,hourly,12h,5,pre,0,anthesis,5
+162,Shah 2013,RH.G90.CHN,RH.G90.PRE5.12H,No. overnight hr RH >= 90,pre,RH,count,hourly,12h,5,pre,0,anthesis,5
+163,Shah 2013,RH.AN,RH.A.PRE7.12H,Mean RH overnight,pre,RH,mean,daily,12h,7,pre,0,anthesis,7
+165,Shah 2013,RH.G80.CHN,RH.G80.PRE7.12H,No. overnight hr RH >= 80,pre,RH,count,hourly,12h,7,pre,0,anthesis,7
+166,Shah 2013,RH.G90.CHN,RH.G90.PRE7.12H,No. overnight hr RH >= 90,pre,RH,count,hourly,12h,7,pre,0,anthesis,7
+167,Shah 2013,RH.AN,RH.A.PRE10.12H,Mean RH overnight,pre,RH,mean,daily,12h,10,pre,0,anthesis,10
+168,Shah 2013,RH.A,RH.A.PRE10.24H,Daily mean RH,pre,RH,mean,daily,24h,10,pre,0,anthesis,10
+169,Shah 2013,RH.G80.CHN,RH.G80.PRE10.12H,No. overnight hr RH >= 80,pre,RH,count,hourly,12h,10,pre,0,anthesis,10
+170,Shah 2013,RH.G90.CHN,RH.G90.PRE10.12H,No. overnight hr RH >= 90,pre,RH,count,hourly,12h,10,pre,0,anthesis,10
+171,Shah 2013,RH.AN,RH.A.PRE14.12H,Mean RH overnight,pre,RH,mean,daily,12h,14,pre,0,anthesis,14
+172,Shah 2013,RH.A,RH.A.PRE14.24H,Daily mean RH,pre,RH,mean,daily,24h,14,pre,0,anthesis,14
+173,Shah 2013,RH.G80.CHN,RH.G80.PRE14.12H,No. overnight hr RH >= 80,pre,RH,count,hourly,12h,14,pre,0,anthesis,14
+174,Shah 2013,RH.G90.CHN,RH.G90.PRE14.12H,No. overnight hr RH >= 90,pre,RH,count,hourly,12h,14,pre,0,anthesis,14
+175,Shah 2013,RH.AN,RH.A.PRE15.12H,Mean RH overnight,pre,RH,mean,daily,12h,15,pre,0,anthesis,15
+176,Shah 2013,RH.A,RH.A.PRE15.24H,Daily mean RH,pre,RH,mean,daily,24h,15,pre,0,anthesis,15
+177,Shah 2013,RH.G80.CHN,RH.G80.PRE15.12H,No. overnight hr RH >= 80,pre,RH,count,hourly,12h,15,pre,0,anthesis,15
+178,Shah 2013,RH.G90.CHN,RH.G90.PRE15.12H,No. overnight hr RH >= 90,pre,RH,count,hourly,12h,15,pre,0,anthesis,15
+179,Shah 2013,RH.AN,RH.A.POST5.12H,Mean RH overnight,post,RH,mean,daily,12h,0,anthesis,5,post,5
+180,Shah 2013,RH.A,RH.A.POST5.24H,Daily mean RH,post,RH,mean,daily,24h,0,anthesis,5,post,5
+181,Shah 2013,RH.G80.CHN,RH.G80.POST5.12H,No. overnight hr RH >= 80,post,RH,count,hourly,12h,0,anthesis,5,post,5
+182,Shah 2013,RH.G90.CHN,RH.G90.POST5.12H,No. overnight hr RH >= 90,post,RH,count,hourly,12h,0,anthesis,5,post,5
+183,Shah 2013,RH.AN,RH.A.POST7.12H,Mean RH overnight,post,RH,mean,daily,12h,0,anthesis,7,post,7
+184,Shah 2013,RH.A,RH.A.POST7.24H,Daily mean RH,post,RH,mean,daily,24h,0,anthesis,7,post,7
+185,Shah 2013,RH.G80.CHN,RH.G80.POST7.12H,No. overnight hr RH >= 80,post,RH,count,hourly,12h,0,anthesis,7,post,7
+186,Shah 2013,RH.G90.CHN,RH.G90.POST7.12H,No. overnight hr RH >= 90,post,RH,count,hourly,12h,0,anthesis,7,post,7
+187,Shah 2013,RH.AN,RH.A.POST10.12H,Mean RH overnight,post,RH,mean,daily,12h,0,anthesis,10,post,10
+189,Shah 2013,RH.G80.CHN,RH.G80.POST10.12H,No. overnight hr RH >= 80,post,RH,count,hourly,12h,0,anthesis,10,post,10
+190,Shah 2013,RH.G90.CHN,RH.G90.POST10.12H,No. overnight hr RH >= 90,post,RH,count,hourly,12h,0,anthesis,10,post,10
+191,Shah 2013,RH.AN,RH.A.POST14.12H,Mean RH overnight,post,RH,mean,daily,12h,0,anthesis,14,post,14
+192,Shah 2013,RH.A,RH.A.POST14.24H,Daily mean RH,post,RH,mean,daily,24h,0,anthesis,14,post,14
+193,Shah 2013,RH.G80.CHN,RH.G80.POST14.12H,No. overnight hr RH >= 80,post,RH,count,hourly,12h,0,anthesis,14,post,14
+194,Shah 2013,RH.G90.CHN,RH.G90.POST14.12H,No. overnight hr RH >= 90,post,RH,count,hourly,12h,0,anthesis,14,post,14
+195,Shah 2013,RH.AN,RH.A.POST15.12H,Mean RH overnight,post,RH,mean,daily,12h,0,anthesis,15,post,15
+196,Shah 2013,RH.A,RH.A.POST15.24H,Daily mean RH,post,RH,mean,daily,24h,0,anthesis,15,post,15
+197,Shah 2013,RH.G80.CHN,RH.G80.POST15.12H,No. overnight hr RH >= 80,post,RH,count,hourly,12h,0,anthesis,15,post,15
+198,Shah 2013,RH.G90.CHN,RH.G90.POST15.12H,No. overnight hr RH >= 90,post,RH,count,hourly,12h,0,anthesis,15,post,15
+199,Shah 2013,T.A,T.A.PRE5.24H,Daily mean T,pre,T,mean,daily,24h,5,pre,0,anthesis,5
+200,Shah 2013,T.9T30.CHD,T.9T30.PRE5.24H,No. hr 9 <= T <= 30,pre,T,count,hourly,24h,5,pre,0,anthesis,5
+201,Shah 2013,T.15T30.CHD,T.15T30.PRE5.24H,No. hr 15 <= T <= 30,pre,T,count,hourly,24h,5,pre,0,anthesis,5
+202,Shah 2013,T.L9.CHD,T.L9.PRE5.24H,No. hr T < 9,pre,T,count,hourly,24h,5,pre,0,anthesis,5
+203,Shah 2013,T.L15.CHD,T.L15.PRE5.24H,No. hr T < 15,pre,T,count,hourly,24h,5,pre,0,anthesis,5
+204,Shah 2013,T.G30.CHD,T.G30.PRE5.24H,No. hr T > 30,pre,T,count,hourly,24h,5,pre,0,anthesis,5
+205,Shah 2013,T.A,T.A.PRE7.24H,Daily mean T,pre,T,mean,daily,24h,7,pre,0,anthesis,7
+206,Shah 2013,T.9T30.CHD,T.9T30.PRE7.24H,No. hr 9 <= T <= 30,pre,T,count,hourly,24h,7,pre,0,anthesis,7
+208,Shah 2013,T.L9.CHD,T.L9.PRE7.24H,No. hr T < 9,pre,T,count,hourly,24h,7,pre,0,anthesis,7
+209,Shah 2013,T.L15.CHD,T.L15.PRE7.24H,No. hr T < 15,pre,T,count,hourly,24h,7,pre,0,anthesis,7
+210,Shah 2013,T.G30.CHD,T.G30.PRE7.24H,No. hr T > 30,pre,T,count,hourly,24h,7,pre,0,anthesis,7
+211,Shah 2013,T.A,T.A.PRE10.24H,Daily mean T,pre,T,mean,daily,24h,10,pre,0,anthesis,10
+212,Shah 2013,T.9T30.CHD,T.9T30.PRE10.24H,No. hr 9 <= T <= 30,pre,T,count,hourly,24h,10,pre,0,anthesis,10
+213,Shah 2013,T.15T30.CHD,T.15T30.PRE10.24H,No. hr 15 <= T <= 30,pre,T,count,hourly,24h,10,pre,0,anthesis,10
+214,Shah 2013,T.L9.CHD,T.L9.PRE10.24H,No. hr T < 9,pre,T,count,hourly,24h,10,pre,0,anthesis,10
+215,Shah 2013,T.L15.CHD,T.L15.PRE10.24H,No. hr T < 15,pre,T,count,hourly,24h,10,pre,0,anthesis,10
+216,Shah 2013,T.G30.CHD,T.G30.PRE10.24H,No. hr T > 30,pre,T,count,hourly,24h,10,pre,0,anthesis,10
+217,Shah 2013,T.A,T.A.PRE14.24H,Daily mean T,pre,T,mean,daily,24h,14,pre,0,anthesis,14
+218,Shah 2013,T.9T30.CHD,T.9T30.PRE14.24H,No. hr 9 <= T <= 30,pre,T,count,hourly,24h,14,pre,0,anthesis,14
+219,Shah 2013,T.15T30.CHD,T.15T30.PRE14.24H,No. hr 15 <= T <= 30,pre,T,count,hourly,24h,14,pre,0,anthesis,14
+220,Shah 2013,T.L9.CHD,T.L9.PRE14.24H,No. hr T < 9,pre,T,count,hourly,24h,14,pre,0,anthesis,14
+221,Shah 2013,T.L15.CHD,T.L15.PRE14.24H,No. hr T < 15,pre,T,count,hourly,24h,14,pre,0,anthesis,14
+222,Shah 2013,T.G30.CHD,T.G30.PRE14.24H,No. hr T > 30,pre,T,count,hourly,24h,14,pre,0,anthesis,14
+223,Shah 2013,T.A,T.A.PRE15.24H,Daily mean T,pre,T,mean,daily,24h,15,pre,0,anthesis,15
+224,Shah 2013,T.9T30.CHD,T.9T30.PRE15.24H,No. hr 9 <= T <= 30,pre,T,count,hourly,24h,15,pre,0,anthesis,15
+225,Shah 2013,T.15T30.CHD,T.15T30.PRE15.24H,No. hr 15 <= T <= 30,pre,T,count,hourly,24h,15,pre,0,anthesis,15
+226,Shah 2013,T.L9.CHD,T.L9.PRE15.24H,No. hr T < 9,pre,T,count,hourly,24h,15,pre,0,anthesis,15
+227,Shah 2013,T.L15.CHD,T.L15.PRE15.24H,No. hr T < 15,pre,T,count,hourly,24h,15,pre,0,anthesis,15
+228,Shah 2013,T.G30.CHD,T.G30.PRE15.24H,No. hr T > 30,pre,T,count,hourly,24h,15,pre,0,anthesis,15
+229,Shah 2013,T.A,T.A.POST5.24H,Daily mean T,post,T,mean,daily,24h,0,anthesis,5,post,5
+230,Shah 2013,T.9T30.CHD,T.9T30.POST5.24H,No. hr 9 <= T <= 30,post,T,count,hourly,24h,0,anthesis,5,post,5
+231,Shah 2013,T.15T30.CHD,T.15T30.POST5.24H,No. hr 15 <= T <= 30,post,T,count,hourly,24h,0,anthesis,5,post,5
+232,Shah 2013,T.L9.CHD,T.L9.POST5.24H,No. hr T < 9,post,T,count,hourly,24h,0,anthesis,5,post,5
+233,Shah 2013,T.L15.CHD,T.L15.POST5.24H,No. hr T < 15,post,T,count,hourly,24h,0,anthesis,5,post,5
+234,Shah 2013,T.G30.CHD,T.G30.POST5.24H,No. hr T > 30,post,T,count,hourly,24h,0,anthesis,5,post,5
+235,Shah 2013,T.A,T.A.POST7.24H,Daily mean T,post,T,mean,daily,24h,0,anthesis,7,post,7
+236,Shah 2013,T.9T30.CHD,T.9T30.POST7.24H,No. hr 9 <= T <= 30,post,T,count,hourly,24h,0,anthesis,7,post,7
+237,Shah 2013,T.15T30.CHD,T.15T30.POST7.24H,No. hr 15 <= T <= 30,post,T,count,hourly,24h,0,anthesis,7,post,7
+238,Shah 2013,T.L9.CHD,T.L9.POST7.24H,No. hr T < 9,post,T,count,hourly,24h,0,anthesis,7,post,7
+239,Shah 2013,T.L15.CHD,T.L15.POST7.24H,No. hr T < 15,post,T,count,hourly,24h,0,anthesis,7,post,7
+240,Shah 2013,T.G30.CHD,T.G30.POST7.24H,No. hr T > 30,post,T,count,hourly,24h,0,anthesis,7,post,7
+242,Shah 2013,T.9T30.CHD,T.9T30.POST10.24H,No. hr 9 <= T <= 30,post,T,count,hourly,24h,0,anthesis,10,post,10
+244,Shah 2013,T.L9.CHD,T.L9.POST10.24H,No. hr T < 9,post,T,count,hourly,24h,0,anthesis,10,post,10
+245,Shah 2013,T.L15.CHD,T.L15.POST10.24H,No. hr T < 15,post,T,count,hourly,24h,0,anthesis,10,post,10
+246,Shah 2013,T.G30.CHD,T.G30.POST10.24H,No. hr T > 30,post,T,count,hourly,24h,0,anthesis,10,post,10
+247,Shah 2013,T.A,T.A.POST14.24H,Daily mean T,post,T,mean,daily,24h,0,anthesis,14,post,14
+248,Shah 2013,T.9T30.CHD,T.9T30.POST14.24H,No. hr 9 <= T <= 30,post,T,count,hourly,24h,0,anthesis,14,post,14
+249,Shah 2013,T.15T30.CHD,T.15T30.POST14.24H,No. hr 15 <= T <= 30,post,T,count,hourly,24h,0,anthesis,14,post,14
+250,Shah 2013,T.L9.CHD,T.L9.POST14.24H,No. hr T < 9,post,T,count,hourly,24h,0,anthesis,14,post,14
+251,Shah 2013,T.L15.CHD,T.L15.POST14.24H,No. hr T < 15,post,T,count,hourly,24h,0,anthesis,14,post,14
+252,Shah 2013,T.G30.CHD,T.G30.POST14.24H,No. hr T > 30,post,T,count,hourly,24h,0,anthesis,14,post,14
+253,Shah 2013,T.A,T.A.POST15.24H,Daily mean T,post,T,mean,daily,24h,0,anthesis,15,post,15
+254,Shah 2013,T.9T30.CHD,T.9T30.POST15.24H,No. hr 9 <= T <= 30,post,T,count,hourly,24h,0,anthesis,15,post,15
+255,Shah 2013,T.15T30.CHD,T.15T30.POST15.24H,No. hr 15 <= T <= 30,post,T,count,hourly,24h,0,anthesis,15,post,15
+256,Shah 2013,T.L9.CHD,T.L9.POST15.24H,No. hr T < 9,post,T,count,hourly,24h,0,anthesis,15,post,15
+257,Shah 2013,T.L15.CHD,T.L15.POST15.24H,No. hr T < 15,post,T,count,hourly,24h,0,anthesis,15,post,15
+258,Shah 2013,T.G30.CHD,T.G30.POST15.24H,No. hr T > 30,post,T,count,hourly,24h,0,anthesis,15,post,15
+259,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.PRE5.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,5,pre,0,anthesis,5
+260,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.PRE5.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,5,pre,0,anthesis,5
+261,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.PRE5.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,5,pre,0,anthesis,5
+262,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.PRE5.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,5,pre,0,anthesis,5
+263,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.PRE7.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,7,pre,0,anthesis,7
+264,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.PRE7.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,7,pre,0,anthesis,7
+265,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.PRE7.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,7,pre,0,anthesis,7
+266,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.PRE7.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,7,pre,0,anthesis,7
+267,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.PRE10.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,10,pre,0,anthesis,10
+268,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.PRE10.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,10,pre,0,anthesis,10
+269,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.PRE10.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,10,pre,0,anthesis,10
+270,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.PRE10.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,10,pre,0,anthesis,10
+271,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.PRE14.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,14,pre,0,anthesis,14
+272,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.PRE14.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,14,pre,0,anthesis,14
+273,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.PRE14.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,14,pre,0,anthesis,14
+274,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.PRE14.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,14,pre,0,anthesis,14
+275,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.PRE15.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,15,pre,0,anthesis,15
+276,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.PRE15.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,15,pre,0,anthesis,15
+277,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.PRE15.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,12h,15,pre,0,anthesis,15
+278,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.PRE15.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,12h,15,pre,0,anthesis,15
+279,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.POST5.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,5,post,5
+280,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.POST5.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,5,post,5
+281,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.POST5.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,5,post,5
+282,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.POST5.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,5,post,5
+283,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.POST7.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,7,post,7
+284,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.POST7.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,7,post,7
+285,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.POST7.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,7,post,7
+286,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.POST7.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,7,post,7
+287,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.POST10.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,10,post,10
+288,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.POST10.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,10,post,10
+289,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.POST10.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,10,post,10
+290,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.POST10.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,10,post,10
+291,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.POST14.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,14,post,14
+292,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.POST14.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,14,post,14
+293,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.POST14.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,14,post,14
+294,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.POST14.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,14,post,14
+295,Shah 2013,TRH.9T30nRHG80.CHN,TRH.9T30nRHG80.POST15.12H,No. overnight hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,15,post,15
+296,Shah 2013,TRH.9T30nRHG90.CHN,TRH.9T30nRHG90.POST15.12H,No. overnight hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,15,post,15
+297,Shah 2013,TRH.15T30nRHG80.CHN,TRH.15T30nRHG80.POST15.12H,No. overnight hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,12h,0,anthesis,15,post,15
+298,Shah 2013,TRH.15T30nRHG90.CHN,TRH.15T30nRHG90.POST15.12H,No. overnight hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,12h,0,anthesis,15,post,15
+299,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.PRE5.24H,No. hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,5,pre,0,anthesis,5
+300,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.PRE5.24H,No. hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,5,pre,0,anthesis,5
+301,Shah 2013,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.PRE5.24H,No. hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,5,pre,0,anthesis,5
+302,Shah 2013,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.PRE5.24H,No. hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,5,pre,0,anthesis,5
+303,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.PRE7.24H,No. hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,7,pre,0,anthesis,7
+304,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.PRE7.24H,No. hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,7,pre,0,anthesis,7
+307,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.PRE10.24H,No. hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,10,pre,0,anthesis,10
+308,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.PRE10.24H,No. hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,10,pre,0,anthesis,10
+309,Shah 2013,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.PRE10.24H,No. hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,10,pre,0,anthesis,10
+310,Shah 2013,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.PRE10.24H,No. hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,10,pre,0,anthesis,10
+311,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.PRE14.24H,No. hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,14,pre,0,anthesis,14
+312,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.PRE14.24H,No. hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,14,pre,0,anthesis,14
+313,Shah 2013,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.PRE14.24H,No. hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,14,pre,0,anthesis,14
+314,Shah 2013,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.PRE14.24H,No. hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,14,pre,0,anthesis,14
+315,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.PRE15.24H,No. hr 9 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,15,pre,0,anthesis,15
+316,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.PRE15.24H,No. hr 9 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,15,pre,0,anthesis,15
+317,Shah 2013,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.PRE15.24H,No. hr 15 <= T <= 30 & RH >= 80,pre,TRH,count,hourly,24h,15,pre,0,anthesis,15
+318,Shah 2013,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.PRE15.24H,No. hr 15 <= T <= 30 & RH >= 90,pre,TRH,count,hourly,24h,15,pre,0,anthesis,15
+319,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.POST5.24H,No. hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,5,post,5
+320,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.POST5.24H,No. hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,5,post,5
+321,Shah 2013,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.POST5.24H,No. hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,5,post,5
+322,Shah 2013,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.POST5.24H,No. hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,5,post,5
+323,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.POST7.24H,No. hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,7,post,7
+324,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.POST7.24H,No. hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,7,post,7
+325,Shah 2013,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.POST7.24H,No. hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,7,post,7
+326,Shah 2013,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.POST7.24H,No. hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,7,post,7
+327,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.POST10.24H,No. hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,10,post,10
+328,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.POST10.24H,No. hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,10,post,10
+331,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.POST14.24H,No. hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,14,post,14
+332,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.POST14.24H,No. hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,14,post,14
+333,Shah 2013,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.POST14.24H,No. hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,14,post,14
+334,Shah 2013,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.POST14.24H,No. hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,14,post,14
+335,Shah 2013,TRH.9T30nRHG80.CHD,TRH.9T30nRHG80.POST15.24H,No. hr 9 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,15,post,15
+336,Shah 2013,TRH.9T30nRHG90.CHD,TRH.9T30nRHG90.POST15.24H,No. hr 9 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,15,post,15
+337,Shah 2013,TRH.15T30nRHG80.CHD,TRH.15T30nRHG80.POST15.24H,No. hr 15 <= T <= 30 & RH >= 80,post,TRH,count,hourly,24h,0,anthesis,15,post,15
+338,Shah 2013,TRH.15T30nRHG90.CHD,TRH.15T30nRHG90.POST15.24H,No. hr 15 <= T <= 30 & RH >= 90,post,TRH,count,hourly,24h,0,anthesis,15,post,15
