@@ -190,11 +190,11 @@ X1 %>%
 \newpage
 # Resampling schemes
 
-![Schematic of the nested cross-validation resampling strategy used with the Boruta, varSelRF and  VSURF algorithms for random forest variable selection.](../Schematics/Schematic1.png)
+![Schematic of the nested cross-validation resampling strategy used with the Boruta, varSelRF and  VSURF algorithms for random forest variable selection. Created with BioRender.com.](../Schematics/Schematic1.png)
 
 
 \newpage
-![Schematic of the data splitting and resampling strategy used to tune and fit the individual varSelRF and VSURF random forest models.](../Schematics/Schematic2.png)
+![Schematic of the data splitting and resampling strategy used to tune and fit the individual varSelRF and VSURF random forest models. Created with BioRender.com.](../Schematics/Schematic2.png)
 
 
 \newpage
