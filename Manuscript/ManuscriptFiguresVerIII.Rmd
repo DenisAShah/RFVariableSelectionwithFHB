@@ -1,7 +1,7 @@
 ---
 title: "Manuscript Figures"
 author: "Denis Shah"
-date: "9/29/2022"
+date: "10/18/2022"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -639,15 +639,17 @@ comp.plot.pub <- function(.df = dat4, .x, .y, .xlab, .ylab, .tag) {
     theme(axis.text.y = element_text(size = rel(1.0))) +
     theme(axis.title.x = element_text(face = "bold", size = 12)) +
     theme(axis.text.x = element_text(size = rel(1.0))) +
+    theme(aspect.ratio = 1) +
     labs(title = NULL, tag = .tag)
   } # end function comp.plot.pub
 
 
-p4 <- comp.plot.pub(.x = Se, .y = Sp, .xlab = "Se", .ylab = "Sp", .tag = "A") + theme(aspect.ratio = 1)
+p4 <- comp.plot.pub(.x = Se, .y = Sp, .xlab = "Se", .ylab = "Sp", .tag = "A") + 
+  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0.5, 1.0))
 
-p5 <- comp.plot.pub(.x = auc, .y = prauc, .xlab = "ROC-AUC", .ylab = "PR-AUC", .tag = "B") + theme(aspect.ratio = 1)
+p5 <- comp.plot.pub(.x = auc, .y = prauc, .xlab = "ROC-AUC", .ylab = "PR-AUC", .tag = "B") +
+  scale_x_continuous(breaks = seq(0, 1, 0.1), limits = c(0.65, 0.91))
 
-# But the grid_arrange_shared_legend function comes to the rescue:
 # grid_arrange_shared_legend(p4, p5, ncol = 1, nrow = 2)
 grid_arrange_shared_legend(p4, p5, ncol = 2, nrow = 1)
 ```
