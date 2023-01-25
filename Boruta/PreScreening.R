@@ -15,8 +15,6 @@ tidymodels_prefer()
 # 
 # 
 ## ----Load-the-Data, echo=FALSE, eval=TRUE-----------------------------------------------------------------
-# load("~/DeWolfFY1718/Analysis/VariableEngineering/VariablesEngineering.RData")
-
 # Load the fhb data matrix:
 # NOTE: set the proper paths for your system:
 source("../ReadFHBDataset.R")
@@ -97,7 +95,7 @@ io %>%
 
 # 
 # 
-## ----Screened-variable-set-metadate-----------------------------------------------------------------------
+## ----Screened-variable-set-metadata-----------------------------------------------------------------------
 # The meta-data associated with the set of weather variables after pre-screening: 
 io.s <-
    io %>% 
