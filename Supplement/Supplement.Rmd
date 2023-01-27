@@ -1,0 +1,529 @@
+---
+title: "Into the trees: random forests for predicting Fusarium head blight epidemics of wheat in the United States"
+subtitle: "Supplementary Appendices, Figures and Tables"
+# author: "Denis A. Shah, Erick D. De Wolf, Pierce A. Paul, Laurence V. Madden"
+author:
+  - Denis A. Shah^[Department of Plant Pathology, Kansas State University, dashah81@ksu.edu]
+  - Erick D. De Wolf^[Department of Plant Pathology, Kansas State University, dewolf1@ksu.edu]
+  - Pierce A. Paul^[Department of Plant Pathology, The Ohio State University, paul.661@osu.edu]
+  - Laurence V. Madden^[Department of Plant Pathology, The Ohio State University, madden.1@osu.edu]
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+# The header-includes has to be here to generate the Table of Contents:
+# header-includes is used to bold the Table captions and left justify it:
+# https://stackoverflow.com/questions/54931062/can-you-left-justify-or-bold-the-table-figure-caption-for-kable-in-rmarkdown
+header-includes:
+  - \usepackage[justification=raggedright,labelfont=bf,singlelinecheck=false]{caption}
+  - \renewcommand{\thefigure}{S\arabic{figure}}
+  - \renewcommand{\thetable}{S\arabic{table}}
+output: 
+  pdf_document: 
+    toc: yes
+    number_sections: yes
+    fig_caption: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r Libraries, eval=TRUE, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(patchwork)
+library(tidymodels)
+
+library(corrr)
+library(viridis)
+
+library(janitor)
+
+library(kableExtra)
+
+library(wordcloud)
+library(RColorBrewer)
+
+library(themis)
+library(OptimalCutpoints)
+library(viridis)
+
+library(Boruta)
+library(rFerns)
+
+library(parallel)
+library(varSelRF)
+
+library(VSURF)
+library(ranger)
+
+tidymodels_prefer()
+```
+
+\newpage
+
+# Notes
+## The Tables
+**Table S1** shows the variables used by each of the varSelRF models, and **Table S2** gives the metadata for the weather-based variables used by any of the varSelRF models. 
+
+**Tables S3 and S4** do the same for the VSURF models. <br/>
+
+**Tables S5 and S6** show the tuned hyperparameter values for $mtry$ and $min\_n$ for the random forest models shown in **Tables S1 and S3**, where the hyperparameters for each model were tuned over 25 bootstrap resamples of a training dataset. <br/>
+
+
+## Sources
+Source: <br/>
+Refers to the paper in which the variables were first presented. <br/>
+
+**DeWolf 2003** is [De Wolf, E. D., Madden, L. V., and Lipps, P. E. 2003. Risk assessment models for wheat Fusarium head blight epidemics based on within-season weather data. Phytopathology 93:428-435.
+](https://apsjournals.apsnet.org/doi/abs/10.1094/PHYTO.2003.93.4.428)  <br/>
+
+**Shah 2013** is [Shah, D. A., Molineros, J. E., Paul, P. A., Willyerd, K. T., Madden, L. V., and De Wolf, E. D. 2013. Predicting Fusarium head blight epidemics with weather-driven pre- and post-anthesis logistic regression models. Phytopathology 103:906-919.
+](https://apsjournals.apsnet.org/doi/abs/10.1094/PHYTO-11-12-0304-R)  <br/>
+
+**Shah 2019** is [Shah, D. A., Paul, P. A., De Wolf, E. D., and Madden, L. V. 2019. Predicting plant disease epidemics from functionally represented weather series. Philosophical Transactions of the Royal Society B: Biological Sciences. Online publication. doi:10.1098/rstb.2018.0273.
+](https://royalsocietypublishing.org/doi/full/10.1098/rstb.2018.0273)  <br/>
+
+Readers may also consult the Dryad repository (https://doi.org/10.5061/dryad.fn2z34trv) for further details on the FHB dataset.
+
+## Abbreviations
+Abbreviations used in the descriptions of the variables:  <br/>
+
+T = air temperature (\textdegree{}C) <br/>
+
+D = dewpoint (\textdegree{}C) <br/>
+
+P = barometric pressure (hPa) <br/>
+
+RH = relative humidity (%) <br/>
+
+VPD = vapor pressure deficit (kPa) <br/>
+
+TDD = temperature-dewpoint depression (\textdegree{}C) <br/>
+
+sd = standard deviation <br/>
+
+pre = pre-anthesis <br/>
+
+post = post-anthesis <br/>
+
+
+\newpage
+
+# The observational data
+```{r VariableSummary-Load-Data, echo=FALSE, eval=TRUE}
+# Load the fhb data matrix:
+# NOTE: set the proper paths for your system:
+source("../ReadFHBDataset.R")
+
+# Subset X to descriptive variables (not weather-based):
+X1 <-
+  X %>% 
+  dplyr::select(id:S) %>%
+  # add region as a variable:
+  dplyr::left_join(tibble(state = state.abb, region = state.region), by = "state") %>%
+  # add division as a variable (New England, Middle Atlantic, South Atlantic, East South Central, West South Central, East North Central, West North Central, Mountain, and Pacific):
+  dplyr::left_join(tibble(state = state.abb, division = state.division), by = "state") %>%
+  # Add US climate regions:
+  # https://www.ncei.noaa.gov/access/monitoring/reference-maps/us-climate-regions 
+  dplyr::mutate(climzone = "NA") %>%
+  dplyr::mutate(climzone = replace(climzone, state %in% c("CT", "DE", "ME", "MD", "MA", "NH", "NJ", "NY", "PA", "RI", "VT"), "Northeast")) %>%
+  dplyr::mutate(climzone = replace(climzone, state %in% c("IA", "MI", "MN", "WI"), "Upper Midwest")) %>%
+  dplyr::mutate(climzone = replace(climzone, state %in% c("IL", "IN", "KY", "MO", "OH", "TN", "WV"), "Ohio Valley")) %>%
+  dplyr::mutate(climzone = replace(climzone, state %in% c("MT", "NE", "ND", "SD", "WY"), "Northern Rockies and Plains")) %>%
+  dplyr::mutate(climzone = replace(climzone, state %in% c("AR", "KS", "LA", "MS", "OK", "TX"), "South")) %>%
+  dplyr::mutate(climzone = factor(climzone, levels = c("Northeast", "Upper Midwest", "Ohio Valley", "Northern Rockies and Plains", "South")))
+```
+
+
+<!-- Distribution of FHB severity -->
+```{r FHB-severity-graph, eval=TRUE, echo=FALSE, fig.cap="Histogram of the 999 Fusarium head blight severity values in the observational data matrix. The vertical dashed line is at 10% severity, which was the cutoff for dichotomizing observations into non-epidemics (S < 10) or epidemics (S >= 10). Inset: a sample quantile plot showing the proportion of severity values (x-axis) that are less than an observed severity value (y-axis), where the dashed line is at 10% severity.", fig.height=5.0}
+
+# The main plot:
+p1 <-
+  X1 %>%
+  ggplot(., aes(x = S)) +
+  geom_histogram(binwidth = 2, fill = "orange", colour = "black") +
+  geom_vline(xintercept = 10, linetype = "dashed") + 
+  ylab("No. of observations") +
+  xlab("FHB severity (%)") +
+  geom_rug(sides = "b") +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", size = 12)) +
+  theme(axis.text = element_text(size = rel(1.1)))
+  
+# Set-up for the inset plot:
+sv <- X %>% pull(S) %>% sort()
+n <- length(sv) 
+u <- (1:n)/n
+
+# The inset plot
+p2 <- 
+  tibble(u, sv) %>%
+  ggplot(., aes(x = u, y = sv)) +
+  geom_point(size = 2, colour = "orange", alpha = 0.5, pch=19) +
+  geom_hline(yintercept = 10, linetype = "dashed") +
+  labs(x = "Quantile", y = "FHB severity (%)") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(face = "bold", size = 11),
+    axis.text  = element_text(size = 9))
+
+# Combine the two graphics:
+p1 + inset_element(p2, left = 0.5, bottom = 0.4, right = 0.95, top = 0.95)
+```
+
+
+<!-- By climate region -->
+```{r Obs-matrix-by-climate-region-graph, eval=TRUE, echo=FALSE, fig.cap="The FHB observational data by U.S. climate region (https://www.ncei.noaa.gov/access/monitoring/reference-maps/us-climate-regions). Data came from five regions: (i) Northeast, (ii) Upper Midwest, (iii) Ohio Valley, (iv) Northern Rockies and Plains, and (v) South.", fig.height=5.0}
+
+X1 %>%
+  dplyr::count(climzone, state) %>%
+  ggplot(aes(x = state, y = n)) +
+  geom_segment(aes(xend = state, yend = 0)) +
+  geom_point(size = 4, colour = "orange") +
+  coord_flip() +
+  facet_wrap(~climzone, scales = "free_y") +
+  # This prevents the ND dot from being squooshed against the right side border: 
+  scale_y_continuous(limits = c(-10, 300), expand = expansion(mult = c(0, 0))) +
+  theme_bw() +
+  xlab("State") +
+  ylab("Frequency") +
+  theme(# remove the grid lines for y:
+    panel.grid.major.y = element_blank())
+```
+
+
+
+\newpage
+# Appendix S1
+## Nested resampling
+With nested resampling, the data are partitioned at two levels, which are referred to as outer and inner splits (Kuhn and Silge 2022). The outer splits were set up via cross validation stratified on the response (James et al. 2013). For example, if one had 1,000 observations, then in a 10-fold cross validation scheme, the data would be partitioned into 10 subsets $s_i, i = 1, \dots, 10$, where each $s_i$ holds 100 observations. In fold 1, $s_1$ to $s_9$ would together constitute the analysis partition, and $s_{10}$ the assessment partition. The descriptive names ‘analysis’ and ‘assessment’ are an indication of the intended use of each partition (i.e., fitting a model and then assessing or evaluating it). In fold 2, $s_9$ would be held out as the assessment partition, and the other nine $s_i (i \in \{1, \dots, 8, 10 \})$ would make up the analysis partition. Therefore, each fold consists of an analysis partition of 900 observations, and an assessment partition of 100 observations. As one moves from a given fold to another, a different $s_i$ in turn serves the role of the assessment partition. 
+
+In nested resampling, the analysis part of the outer fold is further split into analysis and assessment partitions (Kuhn and Silge 2022). Continuing our example, each outer analysis partition of 900 observations can be bootstrapped to create bootstrap resamples, each with both an analysis and an assessment partition. Because the bootstrap procedure resamples the data with replacement, the inner analysis partition will have the same number of observations as the outer analysis partition from which it was created but will only use about 64% of those observations. The inner assessment partition will consist of the approximately 36% of the observations that were not sampled by the bootstrapping. The inner resamples were used for tasks such as assessing variable selection and for model tuning. 
+
+There are hyperparameters in RFs that can be tuned (optimized for performance), depending on the algorithm implemented for fitting the model (e.g., the ranger or randomForest packages in R) (Probst et al. 2019). However, the three main tunable hyperparameters are the number of predictors sampled at each split ($mtry$), the number of trees ($ntree$) and the minimal number of observations in a terminal node ($min\_n$) (James et al. 2013; Kuhn and Silge 2022). These can be tuned using the analysis partition of the bootstrap resamples (as defined above), and the tuning evaluated on the assessment partition of the resamples. Once a final tuned model has been selected, it can then be fit on the outer analysis partition and evaluated on the outer assessment data. The specific form of the nested resampling used depended on the chosen algorithm (Figs S3 and S4). 
+
+
+\newpage
+## Resampling schemes
+
+![Schematic of the nested cross-validation resampling strategy used with the Boruta, varSelRF and  VSURF algorithms for random forest variable selection. Created with BioRender.com.](..\Schematics\Schematic1.png)
+
+
+\newpage
+![Schematic of the data splitting and resampling strategy used to tune and fit the individual varSelRF and VSURF random forest models. Created with BioRender.com.](..\Schematics\Schematic2.png)
+
+
+\newpage
+# The set of weather-based variables input to Boruta
+
+```{r Boruta-Load-and-Process-Data, echo=FALSE, eval=TRUE}
+# Load the fhb data matrix:
+source("../ReadFHBDataset.R")
+
+# Some pre-processing:
+X1 <- 
+  X %>%
+  # Set up Y as a factor (tidymodels):
+  dplyr::mutate(Y = ifelse(S < 10, "Nonepi", "Epi")) %>%
+  # The first level is the one you want to predict:
+  dplyr::mutate(Y = factor(Y, levels = c("Epi", "Nonepi"))) %>%
+  dplyr::mutate(sq.T.A.PRE7.24H = T.A.PRE7.24H^2) %>%
+  # add region as a variable:
+  dplyr::left_join(tibble(state = state.abb, region = state.region), by = "state") %>%
+  # Set up for the wc variable as in Shah et al. (2013)
+  dplyr::mutate(wc = "NA") %>%
+  dplyr::mutate(wc = replace(wc, type == "spring", "sw")) %>%
+  dplyr::mutate(wc = replace(wc, type == "winter" & corn == 0, "wwnoc")) %>%
+  dplyr::mutate(wc = replace(wc, type == "winter" & corn == 1, "wwc")) %>%
+  dplyr::mutate(wc = factor(wc, levels = c("sw", "wwnoc", "wwc"))) %>%
+  # Arrange variables:
+  dplyr::select(id:type, region, corn, S, Y, resist, wc, T.A.1:sq.T.A.PRE7.24H)
+
+X2 <- 
+  recipe(Y ~ ., data = X1) %>%
+  update_role(c(id:S), new_role = "ID") %>%
+  # remove any zero variance predictors:
+  step_zv(all_predictors()) %>% 
+  # remove any linear combinations:
+  step_lincomb(all_numeric_predictors()) %>%
+  # remove highly correlated variables:
+  step_corr(all_numeric_predictors(), threshold = 0.9) %>%
+  prep() %>%
+  juice()
+  
+# Set up just the response and the predictors to feed into Boruta:
+X3 <- 
+  X2 %>% 
+  dplyr::select(-c(id:S)) %>%
+  # Only the weather-based variables:
+  dplyr::select(-c(Y, wc, resist))
+```
+
+
+```{r Boruta-corr-vars, echo=FALSE, eval=TRUE, fig.cap="Pairwise Pearson correlations among 88 weather-based variables input into the Boruta algorithm for selecting those variables associated with Fusarium head blight epidemics. The bar colors are meant to help the reader distinguish the bins."}
+# The correlation matrix:
+foo_cor <- 
+  X3 %>% 
+  correlate(method = "pearson", quiet = TRUE) 
+
+# A histogram of the pairwise correlations:
+# This will be a supplementary figure -- jazz it up a bit with color
+
+foo_cor %>%
+  shave() %>%
+  stretch(na.rm = TRUE) %>%
+  ggplot(., aes(x = r)) +
+  geom_histogram(binwidth = 0.1, aes(fill = ..count..)) +
+  # geom_histogram(binwidth = 0.1, colour = "black") +
+  scale_fill_viridis() +
+  theme_bw() +
+  labs(x = "Pearson correlation", y = "Count") +
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 12, face = "bold"))
+```
+
+
+\newpage
+```{r All-Variables-Metadata, eval=TRUE, echo=FALSE}
+# Get the meta-data...
+io <- readr::read_csv("../Data/VariableMetaData.csv", show_col_types = FALSE)
+```
+
+
+# varSelRF models
+```{r varSelRF-Models-Setup, eval=TRUE, echo=FALSE}
+# Load the object (m1) containing the information on the models:
+load("../varSelRF/varSelRFResII.RData")
+
+# The data on the 20 models:
+m2 <- 
+   m1 %>%
+   dplyr::select(max.vars, max.no.vars, max.fmla, auc.outer) %>%
+   tidyr::unnest(cols = auc.outer) %>%
+   tibble::rownames_to_column() %>%
+   # 20 models:
+   dplyr::filter(.estimate >= 0.92, max.no.vars >= 9, max.no.vars <= 14) %>%
+   rename(vars = max.vars, no.vars = max.no.vars, fmla = max.fmla, auc = .estimate)
+
+# Get the variables (as used across the 20 models):
+varSelRF_vars <- 
+   m2 %>%  
+   dplyr::select(vars) %>%
+   tidyr::unnest(cols = vars)
+```
+
+<!-- ## The models -->
+```{r varSelRF-Models-Table, eval=TRUE, echo=FALSE}
+m2 %>%
+  mutate(model = stringr::str_c("varSelRF_M", 1:20), .before = rowname) %>%
+  select(model, no.vars, vars) %>%
+  mutate(vars = map(vars, function(x) x %>% pull(var))) %>%
+  mutate(vars = map(vars, ~sort(.x))) %>%
+  kable(., row.names = FALSE, booktabs = TRUE, caption = "Variables in random forest models proposed after evaluating and filtering the selections made by the varSelRF algorithm", col.names = c("Model", "No. variables", "Variables in the model")) %>% 
+  kable_styling(position = "center", latex_options = c("scale_down", "striped", "HOLD_position"))
+```
+
+<!-- ## The variables -->
+```{r varSelRF-Models-vars-Metadata, eval=TRUE, echo=FALSE}
+# vars_sub is a character vector of the 32 distinct weather variables (resist is excluded) used among the 20 RF models
+vars_sub <-
+   varSelRF_vars %>%
+   dplyr::distinct() %>%
+   dplyr::filter(!var == "resist") %>%
+   dplyr::pull(var)
+
+# The meta-data associated with these 32 weather variables: 
+io.s <-
+   io %>% 
+   dplyr::filter(variable_name %in% vars_sub)
+
+io.s %>%
+  dplyr::select(source, variable_name, summary, win_start_period, win_start_day, win_end_period, win_end_day, win_length) %>%
+  arrange(variable_name) %>%
+  kable(., row.names = TRUE, booktabs = TRUE, caption = "Descriptions of the weather-based variables used by the random forest models shown in Table S1", col.names = c("Source", "Name", "Summary", "Window start period", "Window start day", "Window end period", "Window end day", "Window length")) %>%
+  kable_styling(latex_options = c("striped", "scale_down", "HOLD_position"), position = "center") %>%
+  footnote(alphabet = c("Source: See the Notes section at the beginning of the document.", "D = dewpoint, T = air temperature, TDD = temperature-dewpoint depression, P = barometric pressure, RH = relative humidity, VPD = vapor pressure deficit, sd = standard deviation.", "Window start period & Window end period. Indicate whether the beginning (or end) of the weather time series summarized by the variable was pre-anthesis (pre), post-anthesis (post), or at anthesis.", "Window start day. The number of days relative to anthesis (which is 0) at which the window was begun.", " Window end day. The number of days relative to anthesis (which is 0) at which the window was ended.", "Window length. The length of the window (in days) over which the weather time series was summarized by the variable.") )
+```
+
+
+\newpage
+# VSURF models
+```{r VSURF-Models-Setup, eval=TRUE, echo=FALSE}
+# Load the saved object with the VSURF results:
+load("../VSURF/VSURF0Res.RData")
+
+# This gets the rowid's of duplicate models in the vsurf object:
+dups <-
+  vsurf %>%
+  tibble::rowid_to_column() %>%
+  dplyr::select(rowid, indx) %>%
+  # Sort the indices:
+  dplyr::mutate(sorted = map(indx, sort)) %>%
+  # The filtering step identifies the duplicates:
+  dplyr::group_by(sorted) %>%
+  dplyr::filter(n() > 1) %>%
+  # Arrange so that the duplicates are shown together:
+  dplyr::arrange(sorted) %>%
+  # and filter out every other:
+  dplyr::filter(row_number() %% 2 == 1) %>%
+  # the rowid's of the duplicates to remove:
+  dplyr::pull(rowid)
+
+# Now we filter to a subset of models to pursue further.
+# Distinct, 6-9 vars, auc no less than 0.8
+vsurf.filtered <-
+  vsurf %>%
+  tibble::rowid_to_column() %>%
+  dplyr::mutate(no_vars = purrr::map(indx, length)) %>%
+  dplyr::mutate(vars = map2(splits, indx, function(.splits, .indx) {
+    x <- analysis(.splits) %>% select(-Y)
+    names(x)[.indx]})) %>%
+  dplyr::select(rowid, no_vars, auc, vars) %>%
+  tidyr::unnest(cols = c(no_vars, auc)) %>%
+  # just easier to call the column auc:
+  dplyr::rename(auc = .estimate) %>%
+  # apply our filtering criteria:
+  dplyr::filter(!rowid %in% dups, no_vars %in% 6:9, auc > 0.8) 
+```
+
+<!-- ## The models -->
+```{r VSURF-Models-Table, eval=TRUE, echo=FALSE}
+vsurf.filtered %>%
+  mutate(model = stringr::str_c("VSURF_M", 1:38), .before = rowid) %>%
+  select(model, no_vars, vars) %>%
+  mutate(vars = map(vars, ~sort(.x))) %>%
+  kable(., row.names = F, booktabs = TRUE, caption = "Variables in random forest models proposed after evaluating and filtering the selections made by the VSURF algorithm", col.names = c("Model", "No. variables", "Variables in the model")) %>% 
+  kable_styling(position = "center", latex_options = c("scale_down", "striped", "HOLD_position"))
+```
+
+<!-- ## The variables -->
+```{r VSURF-Models-vars-Metadata, eval=TRUE, echo=FALSE}
+# Get the distinct variables (as used across the 38 models):
+vars <- 
+   vsurf.filtered %>%
+      dplyr::select(vars) %>%
+      tidyr::unnest(cols = vars) %>%
+      distinct() %>%
+      dplyr::filter(!vars == "resist") %>%
+      dplyr::pull(vars)
+
+# The meta-data associated with these 26 weather variables: 
+io.s <-
+   io %>% 
+   dplyr::filter(variable_name %in% vars)
+
+io.s %>%
+  dplyr::select(source, variable_name, summary, win_start_period, win_start_day, win_end_period, win_end_day, win_length) %>%
+  arrange(variable_name) %>%
+  kable(., row.names = TRUE, booktabs = TRUE, caption = "Descriptions of the weather-based variables used by the random forest models shown in Table S3", col.names = c("Source", "Name", "Summary", "Window start period", "Window start day", "Window end period", "Window end day", "Window length")) %>%
+  kable_styling(latex_options = c("striped", "scale_down", "HOLD_position"), position = "center") %>%
+  footnote(alphabet = c("Source: See the Notes section at the beginning of the document.", "D = dewpoint, T = air temperature, TDD = temperature-dewpoint depression, P = barometric pressure, RH = relative humidity, VPD = vapor pressure deficit, sd = standard deviation.", "Window start period & Window end period: Indicate whether the beginning (or end) of the weather time series summarized by the variable was pre-anthesis (pre), post-anthesis (post), or at anthesis.", "Window start day: The number of days relative to anthesis (which is 0) at which the window was begun.", " Window end day: The number of days relative to anthesis (which is 0) at which the window was ended.", "Window length: The length of the window (in days) over which the weather time series was summarized by the variable.") )
+```
+
+
+\newpage
+# Hyperparameter tuning
+<!-- Tuned parameters for the varSelRF and VSURF models-->
+```{r tuned-parameters-processing, eval=FALSE, echo=FALSE}
+get_tuned_params <- function(.obj, .mdl) {
+  # Extract the parameters for the best fit to a model.
+  # NB: this is for a workflowset with the *Bayes* tuning results
+  # Args:
+  #  .obj = a saved workflowset object with the tuning results
+  #  .mdl = character string for the model, e.g. "M1"
+  #
+  # Returns:
+  #  a tibble with columns for the model, and the tuned values for mtry and min_n
+  #
+  # The tuned parameters resulting in the best fit for the model:
+  best_results <-
+    .obj %>%
+    extract_workflow_set_result(.mdl) %>%
+    select_best() %>%
+    # add a column for the model:
+    dplyr::mutate(model = .mdl, .before = everything()) %>%
+    # don't need .config:
+    dplyr::select(-.config)
+  
+  return(best_results)
+}  # end function get_tuned_params
+
+# The Bayes tuning results for the varSelRF models:
+varselrf <- readRDS("../varSelRF/varSelRF1ResBayes.rds")
+
+# The Bayes tuning results for the VSURF models:
+vsurf <- readRDS("../VSURF/VSURF1.rds")
+
+
+# Map over the different models, place the extracted tuned params in a tibble:
+tune_res <- 
+  rbind(# the VarSelRF tuned hyperparameters:
+  purrr::map_dfr(stringr::str_c("M", 1:20), get_tuned_params, .obj = varselrf) %>%
+  # add varSelRF to the beginning of the model string:
+  dplyr::mutate(model = stringr::str_c("varSelRF_", model)),
+  # the VarSelRF tuned hyperparameters:
+  purrr::map_dfr(stringr::str_c("M", 1:38), get_tuned_params, .obj = vsurf) %>%
+  # add VSURF to the beginning of the model string:
+  dplyr::mutate(model = stringr::str_c("VSURF_", model))
+  )
+
+# Save the object so you don't have to redo it:
+save(tune_res, file = "tuningresults.RData")
+```
+
+## varSelRF models
+<!-- ## The tuned hyperparameters -->
+```{r varSelRF-tuned-parameters-Table, eval=TRUE, echo=FALSE}
+load("tuningresults.RData")
+
+tune_res %>%
+  filter(str_detect(model, "varSelRF")) %>%
+  kable(., row.names = F, booktabs = TRUE, caption = "Tuned hyperparameters for random forest models shown in Table S1", col.names = c("Model", "mtry", "min_n")) %>% 
+  kable_styling(position = "center", latex_options = c("striped", "HOLD_position"), full_width = F) %>%
+  footnote(alphabet = c("mtry = the number of predictors that will be randomly sampled at each split when building trees.", "min_n = the minimal node size.") )
+```
+
+
+\newpage
+## VSURF models
+<!-- The tuned hyperparameters -->
+```{r VSURF-tuned-parameters-Table, eval=TRUE, echo=FALSE}
+load("tuningresults.RData")
+
+tune_res %>%
+  filter(str_detect(model, "VSURF")) %>%
+  kable(., row.names = F, booktabs = TRUE, caption = "Tuned hyperparameters for random forest models shown in Table S3", col.names = c("Model", "mtry", "min_n")) %>% 
+  kable_styling(position = "left", latex_options = c("striped", "HOLD_position"), full_width = F) %>%
+  footnote(alphabet = c("mtry = the number of predictors that will be randomly sampled at each split when building trees.", "min_n = the minimal node size.") )
+```
+
+
+\newpage
+# Appendix S2
+## SHapley Additive exPlanation (SHAP)
+A simplified example will help illustrate the concept. Consider a dataset with $N$ observations, fitted by a model function $f$ to a set $U$ of three predictors $(X_1, X_2, X_3)$. The mean predicted value given by $f$ is $1/N \sum_{i=1}^N \hat f(u_i)$, where $u_i = (x_{1,i}, x_{2,i}, x_{3,i})$ represents the values of $U$ for observation $i$. Now, consider a single, individual observation $x_h$. The prediction for $x_h$ is $\hat f (u_h)$. The difference between the prediction for observation $x_h$ and the mean prediction over all $N$ observations is $\Delta = \hat f(u_h) - 1/N \sum_{i=1}^N \hat f (u_i)$. SHAP values estimate the expected contribution of each predictor in $U_h$ to $\Delta$. For example, suppose that the mean predicted probability of an FHB epidemic is 0.3, and the predicted probability of an epidemic for $x_h$ is 0.5. Then we have $\Delta = 0.2$. The three variables in $U$ may contribute differently to $\Delta$; the contributions may be 0.1, -0.3, and 0.4 for $X_1$, $X_2$ and $X_3$, respectively. That is, both $X_1$ and $X_3$ contribute to increasing the probability of an epidemic for observation $x_h$ (over the global mean probability of 0.3), whereas $X_2$ decreases the probability, all three variables contributing to $\Delta$ in an additive manner. This estimation process is repeated for every observation, and of course, the contributions of each predictor in $U$ can be different across the observations. The SHAP values therefore provide an interpretation of how the predictors in a model contribute to the predicted value, both at a local (individual observation) and global (over all observations) level. SHAP values are computationally time-consuming to estimate, because to assign a ‘fair’ contribution of each variable to the prediction for an observation, one must calculate the marginal contributions over all possible permutations of the input predictors. Therefore, algorithms that approximate the calculation of the SHAP values have been developed to allow the estimations to be done via simulations of the permuted predictor space.
+
+
+
+\newpage
+# References
+Kuhn, M., and Silge, J. 2022. Tidy Modeling with R. O'Reilly Media, Sebastopol, CA.
+
+James, J., Witten, D., Hastie, T., and Tibshirani, R. 2013. An Introduction to Statistical Learning with Applications in R. Springer, New York, NY.
+
+Probst, P., Wright, M. N., and Boulesteix, A.-L. 2019. Hyperparameters and tuning strategies for random forest. WIREs Data Mining and Knowledge Discovery 9:e1301.
+
+
+# Computational time
+
+All  scripts were executed on a machine running the Windows 10 64-bit operating system with 16 GB RAM and a 2.81 GHz processor. The Boruta algorithm run on the resampling scheme specified above took 3.7 hours to complete, varSelRF took 8.8 hours, and the VSURF algorithm (which was run on a simpler resampling scheme than that used for Boruta and varSelRF) took 6.6 hours. Computational time could be reduced by rewriting the scripts to take advantage of parallel processing where possible. 
+
+
+\newpage
+# Computational environment
+```{r SessionInfo, eval=TRUE, echo=FALSE}
+R.Version()$version.string
+R.Version()$system
+sessionInfo()
+```
