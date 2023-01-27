@@ -5,7 +5,14 @@
 # 
 # 
 # 
-## ----Libraries, eval=TRUE, echo=FALSE, message=FALSE------------------------------------------------------
+# --------------------------------------------------------
+# Objects created by this script:
+#  varSelRFRep.RData
+#
+# --------------------------------------------------------
+
+
+## ----Libraries----------------------------------------------------
 library(tidyverse)
 library(tidymodels)
 
