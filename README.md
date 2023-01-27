@@ -1,24 +1,26 @@
 
--   <a
-    href="#into-the-trees-random-forests-for-predicting-fusarium-head-blight-epidemics-of-wheat-in-the-united-states"
-    id="toc-into-the-trees-random-forests-for-predicting-fusarium-head-blight-epidemics-of-wheat-in-the-united-states">Into
-    the trees: random forests for predicting Fusarium head blight epidemics
-    of wheat in the United States</a>
-    -   <a href="#data-and-code" id="toc-data-and-code">Data and code</a>
-        -   <a href="#the-data" id="toc-the-data">The data</a>
-        -   <a href="#schematics" id="toc-schematics"><span>Schematics</span></a>
-        -   <a href="#modeling" id="toc-modeling">Modeling</a>
-            -   <a href="#boruta" id="toc-boruta"><span>Boruta</span></a>
-            -   <a href="#varselrf" id="toc-varselrf"><span>varSelRF</span></a>
-            -   <a href="#vsurf" id="toc-vsurf"><span>VSURF</span></a>
-            -   <a href="#ensembles" id="toc-ensembles"><span>Ensembles</span></a>
-            -   <a href="#shapvalues" id="toc-shapvalues"><span>SHAPvalues</span></a>
-            -   <a href="#figures" id="toc-figures"><span>Figures</span></a>
-        -   <a href="#manuscript" id="toc-manuscript"><span>Manuscript</span></a>
+- <a
+  href="#into-the-trees-random-forests-for-predicting-fusarium-head-blight-epidemics-of-wheat-in-the-united-states"
+  id="toc-into-the-trees-random-forests-for-predicting-fusarium-head-blight-epidemics-of-wheat-in-the-united-states">Into
+  the trees: random forests for predicting Fusarium head blight epidemics
+  of wheat in the United States</a>
+  - <a href="#data-and-modeling-code" id="toc-data-and-modeling-code">Data
+    and modeling code</a>
+    - <a href="#the-data" id="toc-the-data">The data</a>
+    - <a href="#modeling" id="toc-modeling">Modeling</a>
+      - <a href="#boruta" id="toc-boruta">Boruta</a>
+      - <a href="#varselrf" id="toc-varselrf">varSelRF</a>
+      - <a href="#vsurf" id="toc-vsurf">VSURF</a>
+      - <a href="#shapvalues" id="toc-shapvalues">SHAPvalues</a>
+      - <a href="#figures" id="toc-figures">Figures</a>
+  - <a href="#manuscript" id="toc-manuscript">Manuscript</a>
+    - <a href="#manuscriptfigures"
+      id="toc-manuscriptfigures">ManuscriptFigures</a>
+    - <a href="#supplement" id="toc-supplement">Supplement</a>
 
 # Into the trees: random forests for predicting Fusarium head blight epidemics of wheat in the United States
 
-## Data and code
+## Data and modeling code
 
 ### The data
 
@@ -29,22 +31,18 @@ associated weather-based variables) is in
 [`ReadFHBDataset.R`](ReadFHBDataset.R), which is called by other
 scripts.
 
-[`VariableSummary.Rmd`](VariableSummary.Rmd) codes for summaries of the
-FHB observational data (e.g., how many years or regions were
-represented).
+[`DatasetSummary.Rmd`](DatasetSummary.Rmd) codes for some basic
+summaries of the FHB observational data (e.g., how many years or regions
+were represented) and the weather-based variables.
 
 The [`VariableMetaData.csv`](Data/VariableMetaData.csv) file contains
 other information associated with the weather-based predictors, some of
 which is presented in the Tables of the [manuscript
-Supplement](Manuscript/Supplement.Rmd).
+Supplement](Supplement/Supplement.Rmd).
 
 The [`PreviousModelMetrics.csv`](Data/PreviousModelMetrics.csv) file
 contains performance metrics for models reported in [Shah et
 al. 2021](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008831).
-
-### [Schematics](Schematics)
-
-Two flowchart-type diagrams used to show the modeling workflows.
 
 ### Modeling
 
@@ -52,9 +50,18 @@ The analysis starts with [Boruta](Boruta).
 
 #### [Boruta](Boruta)
 
+[`PreScreening.R`](Boruta/PreScreening.R) examines the set of
+weather-based variables before and after filtering to remove highly
+correlated predictors. The filtered set is then input into Boruta.
+
 [`BorutaVarSel1.R`](Boruta/BorutaVarSel1.R) runs the [Boruta
-algorithm](https://mbq.github.io/Boruta/). Results are saved to `.RData`
-files (not uploaded here; see the script).
+algorithm](https://mbq.github.io/Boruta/). Data objects created:
+
+- `BorutaResSmall.RData`
+
+NOTE: `RData` (and `rds`) objects created by this and the other
+following scripts are NOT in the repo, and will have to be created
+(saved) upon running the various scripts.
 
 Having used resampling to run the Boruta algorithm with resampling, look
 at the results returned via
@@ -64,25 +71,28 @@ at the results returned via
 
 [`varSelRF0.Rmd`](varSelRF/varSelRF0.Rmd) runs the [varSelRF
 algorithm](https://github.com/rdiaz02/varSelRF) with the set of
-predictors returned by [Boruta](Boruta). Data objects that will be
-created with this script are `varSelRFRes.RData` and
-`varSelRFResII.RData`.
+predictors returned by [Boruta](Boruta). Data objects created:
 
-[`varSelRF1.R`](varSelRF/varSelRF1.R) looks at 20 candidate RF models
-stemming from the results output by
+- `varSelRFResII.RData`.
+
+[`varSelRF1Single.R`](varSelRF/varSelRF1Single.R) looks at 20 candidate
+RF models stemming from the results output by
 [`varSelRF0.Rmd`](varSelRF/varSelRF0.Rmd), and uses
 [workflowsets](https://workflowsets.tidymodels.org/) to tune the models,
 select the best tuned parameters, and get the probabilities of FHB
-epidemics on a test data set. Data objects created:
+epidemics on a test data set. A single train/test split is used. Data
+objects created:
 
--   `varSelRF1ResGrid.rds`
--   `varSelRF1ResBayes.rds`
--   `varSelRF1TestRes.RData`
--   `varSelRF1TestMetrics.RData`
+- `varSelRF1ResBayes.rds`
+- `varSelRF1TestRes.RData`
+- `varSelRF1TestMetrics.RData`
 
-none of which are in this repo (because of file size), and which will
-have to be done (saved) upon running the script. Same holds for other
-`.Rdata` or `.rds` objects created by the other scripts.
+[`varSelRF1Repeated.R`](varSelRF/varSelRF1Repeated.R) repeats the entire
+workflow 20 times, beginning with the train/test split. The emphasis is
+on the test performance metrics over the 20 repeats. Data objects
+created:
+
+- `varSelRFRep.RData`
 
 #### [VSURF](VSURF)
 
@@ -91,52 +101,46 @@ algorithm](https://github.com/robingenuer/VSURF) to the set of 77
 variables selected after running Boruta. This leads to a candidate set
 of 38 RF models to explore further. Data objects created:
 
--   `VSURF0Res.RData`
+- `VSURF0Res.RData`
 
-[`VSURF1.R`](VSURF/VSURF1.R) tunes the models suggested after running
-the VSURF algorithm, and gets the performance statistics for the models.
+[`VSURF1Single.R`](VSURF/VSURF1Single.R) looks at 38 candidate RF models
+stemming from the results output by [`VSURF0.Rmd`](VSURF/VSURF0.Rmd),
+and uses [workflowsets](https://workflowsets.tidymodels.org/) to tune
+the models, select the best tuned parameters, and get the probabilities
+of FHB epidemics on a test data set. A single train/test split is used.
 Data objects created:
 
--   `VSURF1.RData`
--   `VSURF1.rds`
--   `VSURF1TestRes.RData`
--   `VSURF1TestMetrics.RData`
+- `VSURF1.rds`
+- `VSURF1TestRes.RData`
+- `VSURF1TestMetrics.RData`
 
-#### [Ensembles](Ensembles)
+[`VSURF1Repeated.R`](VSURF/VSURF1Repeated.R) tunes the models suggested
+after running the VSURF algorithm, and gets the performance statistics
+for the models. The workflow is repeated 20 times. Data objects created:
 
-[`RFEnsembles0.R`](Ensembles/RFEnsembles0.R) ensembles the varSelRF and
-VSURF models using stacking via lasso, ridge and elasticnet regression.
-Data objects created:
-
--   `StackedMetrics.RData`
-
-[`RFEnsembles1.Rmd`](Ensembles/RFEnsembles1.Rmd) plots performance
-metrics for the models in the current analysis as well as for [models
-reported
-earlier](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008831).
-
-[`RFEnsembles2.Rmd`](Ensembles/RFEnsembles2.Rmd) presents some summaries
-of the base RF models that were retained by the three metalearners
-(lasso, ridge, elasticnet), as well as the metadata on the variables
-associated with the base RF models. Data objects created:
-
--   `StackedRes.RData`
+- `VSURFRep.RData`
 
 #### [SHAPvalues](SHAPvalues)
 
 [`ShapleyValues.R`](SHAPvalues/ShapleyValues.R) contains code for
 [SHapley Additive exPlanations](https://github.com/slundberg/shap) for
-one of the RF models.
+one of the RF models. Data objects created:
+
+- `shap.RData`
 
 #### [Figures](Figures)
 
 Contains sub-directories holding `.png` files of Figures produced by the
 scripts.
 
-### [Manuscript](Manuscript)
+## Manuscript
 
-[`ManuscriptFiguresVerIII.Rmd`](Manuscript/ManuscriptFiguresVerIII.Rmd)
-is the code for the Figures associated with the paper.
+### [ManuscriptFigures](ManuscriptFigures)
 
-[`Supplement.Rmd`](Manuscript/Supplement.Rmd) contains the code for the
+[`ManuscriptFigures.Rmd`](ManuscriptFigures/ManuscriptFigures.Rmd) is
+the code for the Figures associated with the paper.
+
+### [Supplement](Supplement)
+
+[`Supplement.Rmd`](Supplement/Supplement.Rmd) contains the code for the
 Supplementary pdf file for the paper.
