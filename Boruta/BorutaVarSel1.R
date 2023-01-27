@@ -9,7 +9,7 @@
 # ---------------------------------------------------------------------------------------
 #
 # 
-## ----Libraries, eval=TRUE, echo=FALSE, message=FALSE--------------------------------------------------------
+## ----Libraries--------------------------------------------------------
 library(tidyverse)
 library(tidymodels)
 # themis is not part of tidymodels:
@@ -28,7 +28,7 @@ conflict_prefer("col_factor", "readr")
 
 
 
-## ----Load-and-Process-Data, echo=FALSE, eval=TRUE-----------------------------------------------------------
+## ----Load-and-Process-Data-----------------------------------------------------------
 # Read the FHB dataset from the .csv file:
 source("../ReadFHBDataset.R")
 
@@ -54,7 +54,7 @@ X1 <-
 
 
 
-## ----Recipe-and-Prep, eval=TRUE, echo=FALSE-----------------------------------------------------------------
+## ----Recipe-and-Prep-----------------------------------------------------------------
 X2 <- 
   recipe(Y ~ ., data = X1) %>%
   update_role(c(id:S), new_role = "ID") %>%
@@ -77,7 +77,7 @@ X3 <-
 
 
 
-## ----Removed-Variables, eval=FALSE, echo=FALSE--------------------------------------------------------------
+## ----Removed-Variables--------------------------------------------------------------
 ## # A closer look at the variables removed by the correlation filter
 ## 
 ## # Set up the filter:
@@ -96,7 +96,7 @@ X3 <-
 
 
 ### Resamples
-## ----Resamples-Setup, eval=TRUE, echo=FALSE-----------------------------------------------------------------
+## ----Resamples-Setup-----------------------------------------------------------------
 set.seed(14092)
 # NOTE: have to hardcode n for the number of bootstrap samples:
 N_BOOT <- 25
@@ -114,7 +114,7 @@ folds <- nested_cv(X3,
 
 
 
-## ----Resamples-for-Testing, eval=FALSE, echo=FALSE----------------------------------------------------------
+## ----Resamples-for-Testing----------------------------------------------------------
 ## # A small set of resamples for testing that the algorithm works:
 ## set.seed(14092)
 ## # NOTE: have to hardcode n for the number of bootstrap samples:
@@ -125,7 +125,7 @@ folds <- nested_cv(X3,
 
 
 
-## ----Fitting-Functions, eval=TRUE, echo=FALSE---------------------------------------------------------------
+## ----Fitting-Functions---------------------------------------------------------------
 get_model <- function(object) {
   # Fit a Boruta model and save the model object
   # Args:
@@ -252,7 +252,7 @@ get_confirmed_smry <- function(object) {
 
 
 
-## ----Fit-and-Save-Models, eval=TRUE, echo=FALSE-------------------------------------------------------------
+## ----Fit-and-Save-Models-------------------------------------------------------------
 ## What you want to do:
 # For each inner_resamples bootstraps:
 # 1. Run Boruta on the analysis part of the bootstrap sample
@@ -297,7 +297,7 @@ difftime(end, start, units = "mins")  # Took 221 min (3.7 hr)
 
 
 # # Computational environment
-## ----SessionInfo, eval=TRUE, echo=FALSE, results='markup'---------------------------------------------------
+## ----SessionInfo---------------------------------------------------
 R.Version()$version.string
 R.Version()$system
 sessionInfo()
