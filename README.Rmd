@@ -8,6 +8,8 @@ output:
 Into the trees: random forests for predicting Fusarium head blight epidemics of wheat in the United States
 =========
 
+This repo is associated with the paper (title above) published in the journal *Phytopathology*, and which can be accessed [here](https://apsjournals.apsnet.org/doi/10.1094/PHYTO-10-22-0380-R).
+
 
 ```{r knitr-setup, include=FALSE, eval=TRUE}
 options(digits = 3)
@@ -17,6 +19,10 @@ knitr::opts_chunk$set(eval = TRUE, echo = FALSE, cache = TRUE)
 ```
 
 ## Data and modeling code
+
+A ZIP archive of the entire repo can be downloaded from the following link:
+<https://github.com/DenisAShah/RFVariableSelectionwithFHB/archive/master.zip>
+
 ### The data
 The [Data directory](Data) contains `.csv` files that are called by the various scripts. The main dataset (FHB observational data and the associated weather-based variables) is in [`FHBdataset.csv`](Data/FHBdataset.csv).  This dataset is read by [`ReadFHBDataset.R`](ReadFHBDataset.R), which is called by other scripts.
 

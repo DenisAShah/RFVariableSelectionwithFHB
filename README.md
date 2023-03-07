@@ -20,7 +20,15 @@
 
 # Into the trees: random forests for predicting Fusarium head blight epidemics of wheat in the United States
 
+This repo is associated with the paper (title above) published in the
+journal *Phytopathology*, and which can be accessed
+[here](https://apsjournals.apsnet.org/doi/10.1094/PHYTO-10-22-0380-R).
+
 ## Data and modeling code
+
+A ZIP archive of the entire repo can be downloaded from the following
+link:
+<https://github.com/DenisAShah/RFVariableSelectionwithFHB/archive/master.zip>
 
 ### The data
 
