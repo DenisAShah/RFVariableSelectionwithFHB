@@ -8,6 +8,7 @@ conflict_prefer("col_factor", "readr")
 # (As always, make sure your path is correctly specified)
 X <- readr::read_csv("../Data/FHBdataset.csv",
                 col_types = list(
+                  fdate = col_date(),
                   state =  col_factor(c("AR", "DE", "IL", "IN", "KS", "KY", "MD", "MI", "MN", "MO", "ND", "NE", "NY", "OH", "PA", "SD", "WI")),
                   location = col_character(),
                   type = col_factor(c("spring", "winter")),

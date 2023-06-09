@@ -2,6 +2,8 @@
 output:
   github_document:
     toc: TRUE
+editor_options: 
+  chunk_output_type: console
 ---
 
 
@@ -31,6 +33,7 @@ library(kableExtra)
 # Read the FHB dataset from the .csv file, specifying the column types:
 X <- readr::read_csv("Data/FHBdataset.csv",
                 col_types = list(
+                  fdate = col_date(),
                   state =  col_factor(c("AR", "DE", "IL", "IN", "KS", "KY", "MD", "MI", "MN", "MO", "ND", "NE", "NY", "OH", "PA", "SD", "WI")),
                   location = col_character(),
                   type = col_factor(c("spring", "winter")),
